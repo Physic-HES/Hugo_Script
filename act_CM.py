@@ -22,7 +22,7 @@ while x[-1]<=5:
     V = V + V1
     A = np.dot(npl.inv(M),V)
     plt.plot(x, y, '.r')
-    h,=plt.plot(np.array(x), A[0]+A[1]*np.array(x)+A[2]*np.array(x)**2, '-b')
+    h, = plt.plot(np.array(x), A[0]+A[1]*np.array(x)+A[2]*np.array(x)**2, '-b')
     ax = plt.gca()
     ann = plt.text(0.1*np.max(x), np.max(y)-(0.1*np.max(y)), r'$f(x) =$ %2.2f + %2.2f$x$ + %2.2f$x^2$'%(A[0],A[1],A[2]))
     plt.pause(0.05)
