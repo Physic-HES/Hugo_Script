@@ -27,7 +27,8 @@ while x[-1]<=5:
     h, = plt.plot(q, p, '-b')
     ax = plt.gca()
     pos = [0.1*np.max(x),np.max(y)-(0.1*np.max(y))]
-    ann = plt.text(pos[0], pos[1], r'$f(x) =$ %2.2f + %2.2f$x$ + %2.2f$x^2$'%(A[0],A[1],A[2]))
+    tx = r'$f(x) =$ %2.2f + %2.2f$x$ + %2.2f$x^2$'%(A[0],A[1],A[2])
+    ann = plt.text(pos[0], pos[1], tx)
     plt.pause(0.05)
     ann.remove()
     ax.lines.remove(h)
