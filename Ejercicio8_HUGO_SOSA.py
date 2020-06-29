@@ -74,20 +74,28 @@ plt.title(r'Reconstruccion SVD %1.2f%% en gris (r=%1.2f, g=%1.2f y b=%1.2f)'%((1
 plt.imshow(imagen_gris,cmap='gray',vmin=0,vmax=255)
 plt.savefig('ejemplo4_en_escala_de_grises.jpg')
 
-error = []
 p_=np.arange(0.01,1+0.01,0.01)
-pbar = tqdm(total=len(p_), desc='Calculando error por reduccion SVD: ')
-for p in p_:
-    image_ = reduce_svd(imagen_gris,p)
-    error.append(np.mean(np.abs(image_-imagen_gris))/np.mean(imagen_gris))
-    pbar.update(1)
-pbar.close()
-
+imagenes = ['arbol.jpg','cuadrado.jpg','fractal.jpg','mona_lisa.jpg','poligono.jpeg']
 plt.figure(6)
-plt.plot(p_,np.array(error))
-plt.title('Error entre la imagen original y la reduccion por SVD')
-plt.xlabel('Reduccion [%]')
+for j in np.arange(0,5):
+    error = []
+    if j<4:
+        image = img.imread(imagenes[j], format='jpg')
+    else:
+        image = img.imread(imagenes[j], format='jpeg')
+    r = g = 1 / 3
+    imagen_gris = a_grises(image, r, g)
+    pbar = tqdm(total=len(p_), desc='Calculando error por reduccion SVD de '+imagenes[j])
+    for p in p_:
+        image_ = reduce_svd(imagen_gris,p)
+        error.append(np.mean(np.abs(image_-imagen_gris))/np.mean(imagen_gris))
+        pbar.update(1)
+    pbar.close()
+    plt.plot(p_, np.array(error),label=imagenes[j])
+plt.title('Error entre la imagen original y su reduccion por SVD')
+plt.xlabel('Reduccion de autovalores [%]')
 plt.ylabel('Error relativo')
 plt.savefig('Error_reducSVD.jpg')
+plt.legend()
 plt.show()
 
