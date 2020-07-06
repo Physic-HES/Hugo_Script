@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy import linalg as npl
 import pandas as pd
-from tqdm import tqdm
 
 ## PUNTO A
 X=np.arange(0,np.pi,np.pi/10)
