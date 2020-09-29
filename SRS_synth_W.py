@@ -39,10 +39,7 @@ ini = np.log2(np.min(Spec[:,0]))
 fin = np.log2(np.max(Spec[:,0]))
 j_typ4 = np.linspace(ini,fin,hs)
 step_typ4_ = 2**j_typ4
-#P=np.zeros((4,len(step_typ4_[np.argmin(np.abs(step_typ4_-np.min(Spec[:,0]))):])))
 P[0,:]=-np.sort(-step_typ4_)
-#hs=len(P[0,:])
-#P[0,:]=-np.sort(-((np.max(Spec[:,0])-np.min(Spec[:,0]))*np.random.random(hs)+np.min(Spec[:,0]))) #frecuencias
 P[1,:]=np.sort((tim*3/4)*np.random.random(hs)) #diley
 P[2,:]=10*np.random.random(hs) #Amp
 P[3,:]=np.sort(np.floor((2*np.min(P[0,:])*tim/4-10)*np.random.random(hs)+10)) #NHS
@@ -71,15 +68,6 @@ while dist > np.log(1.5):
     for h in np.arange(0, len(P[0, :])):
         sp.append(Spec2[1][np.argmin(np.abs(Spec2[0]-P[0,h]))])
     P[2, :] = np.array(sp)/SRS[1][::-1] * P[2, :]
-#    req=[]
-#    res=[]
-#    for h in np.arange(0,len(P[0,:])):
-#        srs_=SRS[1][np.argmin(np.abs(SRS[0]-P[0,h]))]
-#        sp=Spec2[1][np.argmin(np.abs(Spec2[0]-P[0,h]))]
-#        if np.abs(np.log(srs_)-np.log(sp))>np.log(1.0000001):
-#            P[2,h]=sp/srs_*P[2,h]
-#        res.append(srs_)
-#        req.append(sp)
     dist=np.max(np.abs(np.array(np.log(SRS[1][::-1]))-np.array(np.log(sp))))
     tol=npl.norm(np.array(SRS[1][::-1])-np.array(sp))/npl.norm(np.array(sp))
     print([dist,tol])
@@ -106,5 +94,4 @@ Sf2=np.zeros((2,len(Sf[0])))
 Sf2[0,:]=Sf[0]
 Sf2[1,:]=Sf[1]
 np.savetxt('SRS_temp.txt', Sf2.T, delimiter='\t')
-
 plt.show()
