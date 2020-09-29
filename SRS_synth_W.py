@@ -14,6 +14,7 @@ def sint(P,tim):
         w+=np.concatenate((np.zeros(k-1),w2,np.zeros(len(w)-(k-1+len(w2)))))
     return [t1,w]
 
+# Spec del Requerimiento
 def loginterp(M):
     f2=np.zeros((len(M)-1)*2000)
     amp=np.zeros((len(M)-1)*2000)
@@ -23,15 +24,31 @@ def loginterp(M):
         amp[(k-1)*2000:k*2000]=np.exp((np.log(M[k,1])-np.log(M[k-1,1]))/(np.log(M[k,0])-np.log(M[k-1,0]))*(np.log(f)-np.log(M[k-1,0]))+np.log(M[k-1,1]))
     return [f2,amp]
 
+# Función SRS
+def SRS_h(S,Q,Spec,hs):
+    damp_type4=1/(2*Q)
+    freq_typ4=np.arange(0,Fs/2,Fs/len(S[1]))
+    ini = np.log2(np.min(Spec[:,0]))
+    fin = np.log2(np.max(Spec[:,0]))
+    j_typ4 = np.linspace(ini,fin,hs)
+    step_typ4 = np.vstack(2**j_typ4)
+    freqM=np.matlib.repmat(freq_typ4,len(j_typ4),1)
+    stepM=np.matlib.repmat(step_typ4,1,len(freq_typ4))
+    H=(stepM**2+1j*2*damp_type4*stepM*freqM)/(stepM**2-freqM**2+1j*2*damp_type4*stepM*freqM)
+    H=np.concatenate((H,np.conj(H[:,::-1])),axis=1)
+    Y3=np.matlib.repmat(np.fft.fft(S[1]),len(j_typ4),1)*H
+    return [step_typ4,np.max(np.abs(np.fft.ifft(Y3,axis=1)),axis=1)]
 
+## Introduccion a mano de requerimientos de ensayo
 #print('Introduzca la Spec SRS como [[frq,Amp],[frq,Amp],[frq,Amp]]:')
 #Spec=np.matrix(eval(input()))
 #print('Introduzca el factor de calidad Q:')
 #Q=np.array(input())
+
 Spec=np.matrix([[100,20],[2000,2850],[10000,2850]])
 Spec2=loginterp(Spec)
 Q=10
-hs=475
+hs=500
 P=np.zeros((4,hs))
 tim=0.3
 Fs=10*np.max(Spec[:,0])
@@ -44,42 +61,29 @@ P[1,:]=np.sort((tim*3/4)*np.random.random(hs)) #diley
 P[2,:]=10*np.random.random(hs) #Amp
 P[3,:]=np.sort(np.floor((2*np.min(P[0,:])*tim/4-10)*np.random.random(hs)+10)) #NHS
 
-tol = 1
-req = 0
-srs_=1
-sp=40
 dist=np.log(2)*10
-while dist > np.log(1.5):
+while dist > np.log(1.41):
     S=sint(P,tim)
-    #SRS
-    damp_type4=1/(2*Q)
-    freq_typ4=np.arange(0,Fs/2,Fs/len(S[1]))
-    ini = np.log2(np.min(Spec[:,0]))
-    fin = np.log2(np.max(Spec[:,0]))
-    j_typ4 = np.linspace(ini,fin,hs)
-    step_typ4 = np.vstack(2**j_typ4)
-    freqM=np.matlib.repmat(freq_typ4,len(j_typ4),1)
-    stepM=np.matlib.repmat(step_typ4,1,len(freq_typ4))
-    H=(stepM**2+1j*2*damp_type4*stepM*freqM)/(stepM**2-freqM**2+1j*2*damp_type4*stepM*freqM)
-    H=np.concatenate((H,np.conj(H[:,::-1])),axis=1)
-    Y3=np.matlib.repmat(np.fft.fft(S[1]),len(j_typ4),1)*H
-    SRS=[step_typ4,np.max(np.abs(np.fft.ifft(Y3,axis=1)),axis=1)]
+    SRS=SRS_h(S,Q,Spec,hs)
     sp=[]
     for h in np.arange(0, len(P[0, :])):
         sp.append(Spec2[1][np.argmin(np.abs(Spec2[0]-P[0,h]))])
     P[2, :] = np.array(sp)/SRS[1][::-1] * P[2, :]
     dist=np.max(np.abs(np.array(np.log(SRS[1][::-1]))-np.array(np.log(sp))))
-    tol=npl.norm(np.array(SRS[1][::-1])-np.array(sp))/npl.norm(np.array(sp))
-    print([dist,tol])
+    err=npl.norm(np.array(SRS[1][::-1])-np.array(sp))/npl.norm(np.array(sp))
+    print('')
+    print(r'Margen alcanzado: +- %2.3f dB'%(3/np.log(2)*dist))
+    print(r'Error relativo: %f' %err)
 
 Sf=sint(P,tim)
+# Graficos
 plt.figure()
 plt.xlim([100,10000])
 plt.ylim([10,10000])
 plt.loglog(SRS[0],SRS[1],label='SRS [G]')
 plt.loglog(Spec2[0], Spec2[1],'--r',label='Requerimiento')
 plt.loglog(Spec2[0], Spec2[1]*2, '--k')
-plt.loglog(Spec2[0], Spec2[1] / 2, '--k')
+plt.loglog(Spec2[0], Spec2[1]/2, '--k')
 plt.xlabel('Frecuencia [Hz]')
 plt.ylabel('Aceleracion [G]')
 plt.grid()
