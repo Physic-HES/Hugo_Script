@@ -42,11 +42,11 @@ for j in np.arange(len(Arch)):
     if j<7:
         dat = np.loadtxt(r'C:/Users/Toshiba3/Documents/HUGO/Servicios EECE/Solares/Pruebas Sergio/temp/%s' % (Arch[j]),
                      skiprows=1, usecols=(0, 8))
-        S = [dat[:, 0], dat[:, 1]]
+        S = [dat[:, 0]/1000, dat[:, 1]]
     if j>=7 and j<=11:
         dat = np.loadtxt(r'C:/Users/Toshiba3/Documents/HUGO/Servicios EECE/Solares/Pruebas Sergio/temp/%s'%(Arch[j]),
                          skiprows=1, usecols=(0, 2))
-        S = [dat[:, 0], dat[:, 1]]
+        S = [dat[:, 0]/1000, dat[:, 1]]
     if j>11:
         dat = np.loadtxt(r'C:/Users/Toshiba3/Documents/HUGO/Servicios EECE/Solares/Pruebas Sergio/temp/%s'%(Arch[j]),
                          skiprows=0, usecols=(0, 1))
