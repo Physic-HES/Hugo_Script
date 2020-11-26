@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import linalg as LA
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 from scipy import signal as S
 import scipy as scp
 import tkinter as tk
@@ -8,6 +9,7 @@ from tkinter import filedialog
 import os
 from tqdm import tqdm
 import pandas as pd
+from scipy import integrate as integ
 root = tk.Tk()
 
 
@@ -58,7 +60,7 @@ def selrec(M,s,n,c):
     return [sig,sig1,sig2,M[3]]
 
 
-def carga(coco='si',head=13):
+def carga(recs=[0],coco='si',head=13):
     # Permite cargar .txt de una carpeta a eleccion mediante interface
     # wimdows (se selecciona la carpeta y luego se cierra la ventana en blanco)
     # para que muestre los archivos dentro de la carpeta
@@ -84,19 +86,32 @@ def carga(coco='si',head=13):
         elif len(arch1[y][10:-4])==2:
             Arch2.append(arch1[y])
     arch3=Arch1+Arch2
-    for j in range(len(arch3)):
-        print('[%2.0f] '%(j+1)+arch3[j])
-    print(' ')
-    print('[1] Importar carpeta /med completa')
-    print('[2] Solo algunos canales')
-    q3 = eval(input('Elija una opción:'))
-    if q3==1:
-        ch=np.arange(0,len(arch3))
-    elif q3==2:
-        ch=np.array(eval(input('Seleccione Canales: ')))-1
-    arch=[]
-    for h in range(len(ch)):
-        arch.append(arch3[ch[h]])
+    if recs[0]==0:
+        for j in range(len(arch3)):
+            print('[%4.0f] ' % (j + 1) + arch3[j])
+        print(' ')
+        print('[1] Importar carpeta /med completa')
+        print('[2] Solo algunos canales')
+        q3 = eval(input('Elija una opción:'))
+        if q3 == 1:
+            ch = np.arange(0, len(arch3))
+        elif q3 == 2:
+            ch = np.array(eval(input('Seleccione Canales: '))) - 1
+        arch = []
+        for h in range(len(ch)):
+            arch.append(arch3[ch[h]])
+    elif recs[0]>0:
+        arch = []
+        ch = []
+        for k in np.arange(len(recs)):
+            for j in np.arange(len(arch3)):
+                if arch3[j][3:7]=='%04.0f'%recs[k]:
+                    ch.append(j)
+        ch = np.array(ch)
+        for h in range(len(ch)):
+            arch.append(arch3[ch[h]])
+        for j in range(len(arch)):
+            print('[%4.0f] ' % (j + 1) + arch3[ch[j]])
     q2 = eval(input('Modificar estiquetas? [1]=Si, [2]=No :'))
     if q2 == 1:
         etiq = []
@@ -188,7 +203,7 @@ def welch_h(dat1,N=8192,rang=[2,1000],overl=50):
         Result.append(Mch)
         ETIQ.append(etiq[j] + ' RMS=%2.3e ' % RMS[-1] + EU[j])
         print(ETIQ[-1])
-        tech.append(np.max(M[-1][1]))
+        tech.append(np.max(Mch[desd:hast,1]))
     return [Result,ETIQ,tech,EU,dat1[3]]
 
 
@@ -304,8 +319,8 @@ def casc(dat1,N=2048,overl=50):
     Result=[]
     ETIQ=[]
     tech=[]
-    for j in np.arange(1,tam):
-        f, t, Sxx=S.spectrogram(dat[j][:,1],1/(dat[0][1,0]-dat[0][0,0]),
+    for j in np.arange(1,len(dat1[0])):
+        f, t, Sxx=S.spectrogram(dat1[0][j][:,1],fs,
                                 window='hann',nperseg=B,
                                 noverlap=ov,scaling='spectrum')
         Result.append([t,f,Sxx])
@@ -463,19 +478,31 @@ def graf(M,type,f_amp='0pk',scale='lin',fig2='si',canales='no',Vmax=0,xlim=[0,50
                 print('[%2.0f] ' %(j+1) + M[1][j])
             canales1 = eval(input('Graficar las señales: '))
             CH = np.array(canales1) - 1
+        if save=='si':
+            pbar = tqdm(total=len(CH), desc='Guardando cascadas...')
         for k in range(len(CH)):
-            plt.figure()
+            plt.figure(figsize=(10,5))
             if Vmax==0:
-                Vmax1 = np.max(M[0][k][2])
+                Vmax1 = np.max(M[0][CH[k]][2])
             elif Vmax>0:
                 Vmax1=Vmax
-            plt.pcolormesh(M[0][k][0], M[0][k][1], M[0][k][2],
-                           shading='gouraud',vmax=Vmax1)
+            Vmin1=Vmax1/1E5
+            plt.pcolormesh(M[0][CH[k]][0], M[0][CH[k]][1], M[0][CH[k]][2],
+                           shading='gouraud',norm=LogNorm(vmin=Vmin1, vmax=Vmax1))
             plt.ylabel('Frecuencia [Hz]')
             plt.xlabel('Tiempo [seg]')
+            plt.ylim(xlim)
             cbar=plt.colorbar()
-            cbar.set_label(M[1][k]+' ['+M[2][k]+']')
-            plt.title(M[1][k])
+            cbar.set_label(M[1][CH[k]]+' ['+M[2][CH[k]]+']')
+            plt.title(M[1][CH[k]])
+            if save=='si':
+                plt.savefig(M[4]+'/'+'casc/casc_'+M[1][k][0:11]+'.png')
+                np.savetxt(M[4]+'/'+'casc/casc_'+M[1][k][0:11]+'.txt',
+                           M[0][k][2],delimiter='\t',fmt='%1.6e')
+                pbar.update(1)
+                plt.close()
+        if save == 'si':
+            pbar.close()
 
 
 def passband(dat1,lowcut,highcut,MAN='no'):
@@ -494,20 +521,21 @@ def passband(dat1,lowcut,highcut,MAN='no'):
     dat2=[dat1[0][0]]
     dat3=np.zeros(np.shape(dat1[0][1]))
     fs = 1 / (dat1[0][1][1,0] - dat1[0][1][0,0])
-    len_sig=len(dat[0])
+    len_sig=len(dat[0][:,0])
     desde = int(lowcut / (fs / 2) * len_sig)
     hasta = int(highcut / (fs / 2) * len_sig)
+    print([desde,hasta])
     vent=np.zeros(len_sig)
     vent[desde:hasta]=1
     vent2=np.concatenate((vent,vent[-np.sort(-np.arange(len_sig))]))
-    for k in np.arange(1,len(dat)):
-        esp=np.fft.fft(dat[k][:,1],n=2*len_sig)
+    for k in np.arange(1,len(dat1[0])):
+        esp=np.fft.fft(dat1[0][k][:,1],n=2*len_sig)
         rms_esp=np.sqrt(np.sum(np.abs(esp[desde:hasta]))/len(np.abs(esp[desde:hasta])))
         esp_=np.real(np.fft.ifft(vent2*esp))
         rms_esp_=np.sqrt(np.sum(np.abs(np.fft.fft(esp_[desde:hasta],n=2*len_sig)))/len(np.abs(esp_[desde:hasta])))
         fa=rms_esp/rms_esp_
-        F=fa*np.real(np.fft.ifft(vent2*np.fft.fft(dat[k][:,1],n=2*len_sig)))
-        dat3[:,0]=dat1[1][:,0]
+        F=fa*np.real(np.fft.ifft(vent2*np.fft.fft(dat1[0][k][:,1],n=2*len_sig)))
+        dat3[:,0]=dat1[0][1][:,0]
         nuev=F[0:len_sig]
         dat3[:,1]=nuev.T
         dat2.append(dat3)
@@ -605,5 +633,47 @@ def int_spec(M,rang=[2,1000]):
         ind=M[1][j].find('=')
         ETIQ.append(M[1][j][0:ind] + '=%2.3e '%(RMS[j]) + EU[j])
         print(ETIQ[j])
-        tech.append(np.max(M1[-1][:,1]))
+        tech.append(np.max(M1[-1][desd:hast, 1]))
     return [M1,ETIQ,tech,EU,M[4]]
+
+
+def int_temp(M1,Lcut1=2):
+    # Permite integrar señales temporales
+    # imput:
+    # M1 es una temporal obtenida con la funcion carga
+    # Lcut1 es la frecuencia de corte para el pasa altos, por default es 2
+    M=M1
+    fs = 1 / (M[0][1][1,0] - M[0][1][0,0])
+    Lcut=Lcut1
+    M2=passband(M, Lcut, fs/2-2)
+    dat=[]
+    EU = []
+    dat.append(M2[0][0])
+    zer=np.zeros((len(M2[0][1][:,0])-1,2))
+    for k in np.arange(1,len(M1[0])):
+        print(k)
+        zer[:,0]=M2[0][k][0:-1,0]
+        zer[:, 1] = integ.cumtrapz(M2[0][k][:, 1],M2[0][k][:,0])
+        dat.append(zer)
+        if M1[2][k-1]=='m/s^2':
+            EU.append('m/s')
+        elif M1[2][k-1]=='m/s':
+            EU.append('m')
+    return [dat,M[1],EU,M[3]]
+
+
+def dupl(M):
+    # Permite duplicar señales temporales, concatenando la señal consigo misma
+    # asignandole un unico eje de tiempo
+    dat=[]
+    dat.append(M[0][0])
+    for j in np.arange(1,len(M[0])):
+        tam = len(M[0][j][:, 0])
+        t = np.linspace(0, 2 * np.max(M[0][j][:, 0]), 2 * tam)
+        zer=np.zeros((2*tam,2))
+        zer[:,0]=t
+        zer[:,1]=np.concatenate((M[0][j][:, 1],M[0][j][:, 1]))
+        dat.append(zer)
+    return [dat,M[1],M[2],M[3]]
+
+#lista_M2_temp=[377,378,376,380,379,113,114,112,117,115,116,111,110,109,381,382,252,250,251,253,254,255]
