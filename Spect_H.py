@@ -329,7 +329,7 @@ def casc(dat1,N=2048,overl=50):
     return [Result,ETIQ,EU,tech,dat1[3]]
 
 
-def graf(M,type,f_amp='0pk',scale='lin',fig2='si',canales='no',Vmax=0,xlim=[0,500],save='no'):
+def graf(M,type,f_amp='0pk',scale='lin',fig2='si',canales='no',Vmax=0,xlim=[0,500],save='no',carp='export'):
     # Permite plotear cualquier estructura de datos elaborada en el presente codigo,
     # por ejemplo cascados, transferencias, espectros y temporales. Ademas permite
     # guardar cada espectro en formatos .png y .txt en una carpeta /fft previamente
@@ -349,6 +349,8 @@ def graf(M,type,f_amp='0pk',scale='lin',fig2='si',canales='no',Vmax=0,xlim=[0,50
     # save: opcion de guardado de espectros tipo 'Spec', default: save='no'. Si save='si' cada
     # espectro se guarda en formatos .png y .txt en una carpeta /fft previamente
     # creada para tal fin en la carpeta de donde se obtuvieron las señales.
+    if save=='si':
+        os.mkdir(M[-1] + '/' + carp)
     if fig2=='si':
         plt.figure()
     if type=='Spec':
@@ -386,8 +388,8 @@ def graf(M,type,f_amp='0pk',scale='lin',fig2='si',canales='no',Vmax=0,xlim=[0,50
                 plt.legend()
                 plt.xlim(xlim)
                 if save=='si':
-                    plt.savefig(M[4]+'/'+'fft/fft_'+M[1][k][0:12]+'.png')
-                    np.savetxt(M[4]+'/'+'fft/fft_'+M[1][k][0:12]+'.txt',
+                    plt.savefig(M[4]+'/'+carp+'/fft_'+M[1][k][0:12]+'.png')
+                    np.savetxt(M[4]+'/'+carp+'/fft_'+M[1][k][0:12]+'.txt',
                                M[0][k],delimiter='\t',fmt='%1.6e')
                     pbar.update(1)
                     plt.close(l)
@@ -403,8 +405,8 @@ def graf(M,type,f_amp='0pk',scale='lin',fig2='si',canales='no',Vmax=0,xlim=[0,50
                 plt.grid(b='bool')
                 plt.legend()
                 if save=='si':
-                    plt.savefig(M[4]+'/'+'fft/fft_'+M[1][k][0:11]+'.png')
-                    np.savetxt(M[4]+'/'+'fft/fft_'+M[1][k][0:11]+'.txt',
+                    plt.savefig(M[4]+'/'+carp+'/fft_'+M[1][k][0:11]+'.png')
+                    np.savetxt(M[4]+'/'+carp+'/fft_'+M[1][k][0:11]+'.txt',
                                M[0][k],delimiter='\t',fmt='%1.6e')
                     pbar.update(1)
             if save == 'si':
@@ -487,8 +489,12 @@ def graf(M,type,f_amp='0pk',scale='lin',fig2='si',canales='no',Vmax=0,xlim=[0,50
             elif Vmax>0:
                 Vmax1=Vmax
             Vmin1=Vmax1/1E5
-            plt.pcolormesh(M[0][CH[k]][0], M[0][CH[k]][1], M[0][CH[k]][2],
+            if scale=='log':
+                plt.pcolormesh(M[0][CH[k]][0], M[0][CH[k]][1], M[0][CH[k]][2],
                            shading='gouraud',norm=LogNorm(vmin=Vmin1, vmax=Vmax1))
+            elif scale=='lin':
+                plt.pcolormesh(M[0][CH[k]][0], M[0][CH[k]][1], M[0][CH[k]][2],
+                               shading='gouraud')
             plt.ylabel('Frecuencia [Hz]')
             plt.xlabel('Tiempo [seg]')
             plt.ylim(xlim)
@@ -496,8 +502,8 @@ def graf(M,type,f_amp='0pk',scale='lin',fig2='si',canales='no',Vmax=0,xlim=[0,50
             cbar.set_label(M[1][CH[k]]+' ['+M[2][CH[k]]+']')
             plt.title(M[1][CH[k]])
             if save=='si':
-                plt.savefig(M[4]+'/'+'casc/casc_'+M[1][k][0:11]+'.png')
-                np.savetxt(M[4]+'/'+'casc/casc_'+M[1][k][0:11]+'.txt',
+                plt.savefig(M[4]+'/'+carp+'/casc_'+M[1][k][0:12]+'.png')
+                np.savetxt(M[4]+'/'+carp+'/casc_'+M[1][k][0:12]+'.txt',
                            M[0][k][2],delimiter='\t',fmt='%1.6e')
                 pbar.update(1)
                 plt.close()
@@ -517,25 +523,23 @@ def passband(dat1,lowcut,highcut,MAN='no'):
     # retunn:
     # mismas caracteristicas de datos que los cargados con la funcion cargar
     # pero con todas las señales filtradas
-    dat=dat1[0][1:]
     dat2=[dat1[0][0]]
-    dat3=np.zeros(np.shape(dat1[0][1]))
     fs = 1 / (dat1[0][1][1,0] - dat1[0][1][0,0])
-    len_sig=len(dat[0][:,0])
-    desde = int(lowcut / (fs / 2) * len_sig)
-    hasta = int(highcut / (fs / 2) * len_sig)
-    print([desde,hasta])
-    vent=np.zeros(len_sig)
-    vent[desde:hasta]=1
-    vent2=np.concatenate((vent,vent[-np.sort(-np.arange(len_sig))]))
     for k in np.arange(1,len(dat1[0])):
+        len_sig = len(dat1[0][k][:, 0])
+        desde = int(lowcut / (fs / 2) * len_sig)
+        hasta = int(highcut / (fs / 2) * len_sig)
+        vent = np.zeros(len_sig)
+        vent[desde:hasta] = 1
+        vent2 = np.concatenate((vent, vent[-np.sort(-np.arange(len_sig))]))
+        dat3 = np.zeros(np.shape(dat1[0][k]))
         esp=np.fft.fft(dat1[0][k][:,1],n=2*len_sig)
         rms_esp=np.sqrt(np.sum(np.abs(esp[desde:hasta]))/len(np.abs(esp[desde:hasta])))
         esp_=np.real(np.fft.ifft(vent2*esp))
         rms_esp_=np.sqrt(np.sum(np.abs(np.fft.fft(esp_[desde:hasta],n=2*len_sig)))/len(np.abs(esp_[desde:hasta])))
         fa=rms_esp/rms_esp_
         F=fa*np.real(np.fft.ifft(vent2*np.fft.fft(dat1[0][k][:,1],n=2*len_sig)))
-        dat3[:,0]=dat1[0][1][:,0]
+        dat3[:,0]=dat1[0][k][:,0]
         nuev=F[0:len_sig]
         dat3[:,1]=nuev.T
         dat2.append(dat3)
@@ -649,10 +653,9 @@ def int_temp(M1,Lcut1=2):
     dat=[]
     EU = []
     dat.append(M2[0][0])
-    zer=np.zeros((len(M2[0][1][:,0])-1,2))
     for k in np.arange(1,len(M1[0])):
-        print(k)
-        zer[:,0]=M2[0][k][0:-1,0]
+        zer = np.zeros((len(M2[0][k][:, 0]) - 1, 2))
+        zer[:,0]=M2[0][k][0:len(M2[0][k][:,0])-1,0]
         zer[:, 1] = integ.cumtrapz(M2[0][k][:, 1],M2[0][k][:,0])
         dat.append(zer)
         if M1[2][k-1]=='m/s^2':
@@ -676,4 +679,24 @@ def dupl(M):
         dat.append(zer)
     return [dat,M[1],M[2],M[3]]
 
+
+def resample(M,c=1):
+    # Permite resamplear señales temporales, borrando indices pares de la señal
+    # conservando el total de tiempo. Esto reduce en cada aplicacion a la mitad
+    # la frecuencia de muestreo
+    # imput:
+    # M es la señal obtenida con la funcion carga
+    # parametros
+    # c es la cantidad de veces que se aplica el resampleo de 1/2*Fs
+    dat=[]
+    dat.append(M[0][0])
+    for j in np.arange(1, len(M[0])):
+        A = np.delete(M[0][j], np.arange(1, len(M[0][j][:, 0]), 2), 0)
+        if c>1:
+            for k1 in np.arange(1,c):
+                A=np.delete(A,np.arange(1,len(A[:,0]),2),0)
+        dat.append(A)
+    return [dat,M[1],M[2],M[3]]
+
 #lista_M2_temp=[377,378,376,380,379,113,114,112,117,115,116,111,110,109,381,382,252,250,251,253,254,255]
+# recs para cascadas gabi [460,1331,470,1341,464,1335,474,1345]
