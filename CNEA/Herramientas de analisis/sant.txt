@@ -1,0 +1,17 @@
+Descripcion	Importe	Cuotas	Dia	Mes	Año
+Parlante	916.58	12	5	12	2020
+Alacena_Bajo_Mesada	1923.33	6	30	4	2021
+Caladora	1098.77	9	11	5	2021
+Simones	299.33	6	11	5	2021
+Sommier	2806.8	12	31	5	2021
+Extractor	2195.96	6	1	7	2021
+Seguro_bolso_Hugo	179.9	0	1	7	2021
+Seguro_bolso_Mariana	179.9	0	1	7	2021
+YouTube_Premium	119	0	1	7	2021
+Impuesto_Sellos	129.51	0	19	8	2021
+Comision_Mant	200.89	0	19	8	2021
+DB.RG	41.65	0	19	8	2021
+Imp_PAIS	35.7	0	19	8	2021
+Netflix	752.76	0	12	8	2021
+IVA	42.19	0	19	8	2021
+Mant_cuenta	546	0	19	8	2021
