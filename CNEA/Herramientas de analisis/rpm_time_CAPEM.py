@@ -5,14 +5,14 @@ import pandas as pd
 from scipy import signal as S
 
 dat_INA=[]
-vec=[]
 ruta='D:/BackUp Hugo Sosa/CNEA/Servicios EECE/Bomba INA/txt/'
 m=[758,763,765,767,769,771,773,775]
-pbar = tqdm(total=7, desc='Importando datos...')
+pbar = tqdm(total=8, desc='Importando datos...')
 for j in m:
+    vec = []
     for c in np.arange(1,4):
         archivo=r'REC0%g_ch%g'%(j,c)
-        imp_dat=pd.read_csv(ruta+archivo+'.txt', delimiter='\t',header=24)
+        imp_dat=pd.read_csv(ruta+archivo+'.txt', delimiter='\t',header=14)
         cols = imp_dat.values
         if c == 1:
             vec.append(cols[:,0])
@@ -24,12 +24,13 @@ for j in m:
 pbar.close()
 
 def passband(dat1,lowcut,highcut):
-    pbar = tqdm(total=len(dat1), desc='Filtrando datos...')
+    pbar = tqdm(total=len(dat1), desc='Analizando archivo...')
+    dat1_ = []
     for j in np.arange(len(dat1)):
-        dat1_=[]
         dat2=[dat1[j][0]]
+        fs = 1 / (dat1[j][0][1] - dat1[j][0][0])
+        pbar2 = tqdm(total=len(dat1[0]) - 1, desc='Filtrando canales...')
         for k in np.arange(1,len(dat1[0])):
-            fs = 1 / (dat1[j][k][1] - dat1[j][k][0])
             len_sig = len(dat1[j][k])
             desde = int(lowcut / (fs / 2) * len_sig)
             hasta = int(highcut / (fs / 2) * len_sig)
@@ -44,16 +45,17 @@ def passband(dat1,lowcut,highcut):
             F=fa*np.real(np.fft.ifft(vent2*esp))
             nuev=F[0:len_sig]
             dat2.append(nuev)
+            pbar2.update(1)
+        pbar2.close()
         pbar.update(1)
         dat1_.append(dat2)
+    pbar.close()
     return dat1_
 
-N=2048
-overl=50
-fs=1/(dat_INA[0][0][1]-dat_INA[0][0][0])
-B=2*N
-ov=int(overl/100*B)
-f, t, Sxx=S.spectrogram(dat_INA[0][1],fs,
-                                window='hann',nperseg=B,
-                                noverlap=ov,scaling='spectrum')
-plt.pcolormesh(t, f, Sxx, shading='gouraud')
+dat1_=passband(dat_INA,46,53)
+ceros=np.where(np.diff(np.sign(np.diff(dat1_[0][1]))))[0]
+freq=[]
+freq1=[]
+freq1.append(dat1_[0][0][ceros[:len(ceros)-1]])
+freq1.append(1/np.diff(dat1_[0][0][ceros])/2)
+freq.append(freq1)
