@@ -52,10 +52,17 @@ def passband(dat1,lowcut,highcut):
     pbar.close()
     return dat1_
 
+
 dat1_=passband(dat_INA,46,53)
-ceros=np.where(np.diff(np.sign(np.diff(dat1_[0][1]))))[0]
-freq=[]
-freq1=[]
-freq1.append(dat1_[0][0][ceros[:len(ceros)-1]])
-freq1.append(1/np.diff(dat1_[0][0][ceros])/2)
-freq.append(freq1)
+
+def get_rpm(X,m):
+    df=pd.DataFrame()
+    for j in np.arange(0,len(m)):
+        for k in np.arange(1,len(X[j])):
+            print([j,k])
+            ceros = np.where(np.diff(np.sign(np.diff(X[j][k]))))[0]
+            df[r'time_REC%g_ch%g'%(m[j],k)]=X[j][0][ceros[:len(ceros)-1]]
+            df[r'rpm_REC%g_ch%g'%(m[j],k)]=1/np.diff(X[j][k][ceros])/2*60
+            plt.plot(df[r'time_REC%g_ch%g'%(m[j],k)],df[r'rpm_REC%g_ch%g'%(m[j],k)],label=r'REC%g_ch%g'%(m[j],k))
+
+get_rpm(dat1_,m)
