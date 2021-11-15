@@ -56,13 +56,18 @@ def passband(dat1,lowcut,highcut):
 dat1_=passband(dat_INA,46,53)
 
 def get_rpm(X,m):
-    df=pd.DataFrame()
     for j in np.arange(0,len(m)):
         for k in np.arange(1,len(X[j])):
             print([j,k])
-            ceros = np.where(np.diff(np.sign(np.diff(X[j][k]))))[0]
-            df[r'time_REC%g_ch%g'%(m[j],k)]=X[j][0][ceros[:len(ceros)-1]]
-            df[r'rpm_REC%g_ch%g'%(m[j],k)]=1/np.diff(X[j][k][ceros])/2*60
-            plt.plot(df[r'time_REC%g_ch%g'%(m[j],k)],df[r'rpm_REC%g_ch%g'%(m[j],k)],label=r'REC%g_ch%g'%(m[j],k))
+            f, t, Sxx = S.spectrogram(X[j][k], 1 / (X[j][0][1] - X[j][0][0]),
+                                      window='hann', nperseg=2 * 16800,
+                                      noverlap=int(95 / 100 * 2 * 16800),
+                                      scaling='spectrum')
+            if k==3:
+                plt.plot(t,f[np.argmax(Sxx,axis=0)]*60,label=r'REC%g_ch%g'%(m[j],k))
+    plt.legend()
+    plt.xlabel('Time [sec]')
+    plt.ylabel('RPM')
+
 
 get_rpm(dat1_,m)
