@@ -78,31 +78,35 @@ def get_rpm(X,m,ch,title):
         for k in ch:
             fs= 1/(X[j][0][1]-X[j][0][0])
             f, t, Sxx = S.spectrogram(X[j][k], fs,
-                                      window='hann', nperseg=int(8*fs),
-                                      noverlap=int(95/100*8*fs), scaling='spectrum')
+                                      window='hann', nperseg=int(16*fs),
+                                      noverlap=int(95/100*16*fs), scaling='spectrum')
             signal=[t,f[np.argmax(Sxx,axis=0)]*60]
             print(title+r': %g'%np.mean(signal[1])+r'+-%g RPM'%np.std(signal[1]))
-            print(r'Delta T: %g seg'%t[1])
+            print(r'Delta T: %g seg'%(t[1]-t[0]))
             print(r'Delta f: %g Hz o %g RPM'%(f[1],f[1]*60))
-            #Vmax1 = np.max(np.max(Sxx))
-            #Vmin1 = Vmax1 / 1E5
-            #plt.figure()
-            #plt.ylim([36 * 60, 66 * 60])
-            #plt.pcolormesh(t, f*60, Sxx,
-            #               shading='gouraud', norm=LogNorm(vmin=Vmin1, vmax=Vmax1))
-            #plt.plot(t,f[np.argmax(Sxx,axis=0)]*60,'-r',label=r'RPM_REC%g_ch%g'%(m[j],k))
-            #plt.xlabel('Tiempo [seg]')
-            #plt.ylabel('RPM')
-            #plt.title(title)
-            #plt.legend()
+            Vmax1 = np.max(np.max(Sxx))
+            Vmin1 = Vmax1 / 1E5
+            plt.figure()
+            plt.ylim([36 * 60, 66 * 60])
+            plt.pcolormesh(t, f*60, Sxx,
+                           shading='gouraud', norm=LogNorm(vmin=Vmin1, vmax=Vmax1))
+            plt.plot(t,f[np.argmax(Sxx,axis=0)]*60,'-r',label=r'RPM_REC%g_ch%g'%(m[j],k))
+            plt.xlabel('Tiempo [seg]')
+            plt.ylabel('RPM')
+            plt.title(title)
+            plt.legend()
             #ceros = np.where(np.diff(np.sign(np.diff(X[j][k]))))[0]
             #df[r'time_REC%g_ch%g'%(m[j],k)]=X[j][0][ceros[:len(ceros)-1]]
             #df[r'rpm_REC%g_ch%g'%(m[j],k)]=1/np.diff(X[j][k][ceros])/2*60
             #plt.plot(df[r'time_REC%g_ch%g'%(m[j],k)],df[r'rpm_REC%g_ch%g'%(m[j],k)],label=r'REC%g_ch%g'%(m[j],k))
-    #plt.show()
+    plt.show()
     return signal
 
 
 inaRPM=get_rpm(ina,m,[3],'RPM(t) ensayo INA')
 cap1RPM=get_rpm(cap1,m2,[4],'RPM(t) ensayo CAPEM 2018')
 cap2RPM=get_rpm(cap2,m3,[4],'RPM(t) ensayo CAPEM 2020')
+
+np.savetxt('rpm_ina.txt',np.matrix(inaRPM).T,delimiter='\t',fmt='%3.6e')
+np.savetxt('rpm_cap2018.txt',np.matrix(cap1RPM).T,delimiter='\t',fmt='%3.6e')
+np.savetxt('rpm_cap2020.txt',np.matrix(cap2RPM).T,delimiter='\t',fmt='%3.6e')
