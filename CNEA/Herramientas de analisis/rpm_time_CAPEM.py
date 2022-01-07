@@ -3,25 +3,40 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import pandas as pd
 from scipy import signal as S
+from matplotlib.colors import LogNorm
 
-dat_INA=[]
+
+def imp(ruta,m,can):
+    dat_INA = []
+    pbar = tqdm(total=can, desc='Importando datos...')
+    for j in m:
+        vec = []
+        for c in np.arange(1,can):
+            archivo=r'REC0%g_ch%g'%(j,c)
+            imp_dat=pd.read_csv(ruta+archivo+'.txt', delimiter='\t',header=14)
+            cols = imp_dat.values
+            if c == 1:
+                vec.append(cols[:,0])
+                vec.append(cols[:,1])
+            if c > 1:
+                vec.append(cols[:,1])
+        pbar.update(1)
+        dat_INA.append(vec)
+    pbar.close()
+    return dat_INA
+
+
+
 ruta='D:/BackUp Hugo Sosa/CNEA/Servicios EECE/Bomba INA/txt/'
-m=[758,763,765,767,769,771,773,775]
-pbar = tqdm(total=8, desc='Importando datos...')
-for j in m:
-    vec = []
-    for c in np.arange(1,4):
-        archivo=r'REC0%g_ch%g'%(j,c)
-        imp_dat=pd.read_csv(ruta+archivo+'.txt', delimiter='\t',header=14)
-        cols = imp_dat.values
-        if c == 1:
-            vec.append(cols[:,0])
-            vec.append(cols[:,1])
-        if c > 1:
-            vec.append(cols[:,1])
-    pbar.update(1)
-    dat_INA.append(vec)
-pbar.close()
+m=[769] #caudal20 INA
+ruta2='D:/BackUp Hugo Sosa/CNEA/Servicios EECE/Bomba INA/Medicion en CAPEM/Temp/'
+m2=[158] #caudal20 CAPEM 2018
+ruta3='D:/BackUp Hugo Sosa/CNEA/Servicios EECE/Bomba INA/Medicion en CAPEM/Medicion2020/Temps/'
+m3=[402] #caudal20 CAPEM 2020
+
+ina=imp(ruta,m,4) #INA
+cap1=imp(ruta2,m2,5) #CAPEM 2018
+cap2=imp(ruta3,m3,5) #CAPEM 2020
 
 def passband(dat1,lowcut,highcut):
     pbar = tqdm(total=len(dat1), desc='Analizando archivo...')
@@ -53,21 +68,41 @@ def passband(dat1,lowcut,highcut):
     return dat1_
 
 
-dat1_=passband(dat_INA,46,53)
+ina=passband(ina,5,100)
+cap1=passband(cap1,5,100)
+cap2=passband(cap2,5,70)
 
-def get_rpm(X,m):
+def get_rpm(X,m,ch,title):
+    #df=pd.DataFrame()
     for j in np.arange(0,len(m)):
-        for k in np.arange(1,len(X[j])):
-            print([j,k])
-            f, t, Sxx = S.spectrogram(X[j][k], 1 / (X[j][0][1] - X[j][0][0]),
-                                      window='hann', nperseg=2 * 16800,
-                                      noverlap=int(95 / 100 * 2 * 16800),
-                                      scaling='spectrum')
-            if k==3:
-                plt.plot(t,f[np.argmax(Sxx,axis=0)]*60,label=r'REC%g_ch%g'%(m[j],k))
-    plt.legend()
-    plt.xlabel('Time [sec]')
-    plt.ylabel('RPM')
+        for k in ch:
+            fs= 1/(X[j][0][1]-X[j][0][0])
+            f, t, Sxx = S.spectrogram(X[j][k], fs,
+                                      window='hann', nperseg=int(8*fs),
+                                      noverlap=int(95/100*8*fs), scaling='spectrum')
+            signal=[t,f[np.argmax(Sxx,axis=0)]*60]
+            print(title+r': %g'%np.mean(signal[1])+r'+-%g RPM'%np.std(signal[1]))
+            print(r'Delta T: %g seg'%t[1])
+            print(r'Delta f: %g Hz o %g RPM'%(f[1],f[1]*60))
+            #Vmax1 = np.max(np.max(Sxx))
+            #Vmin1 = Vmax1 / 1E5
+            #plt.figure()
+            #plt.ylim([36 * 60, 66 * 60])
+            #plt.pcolormesh(t, f*60, Sxx,
+            #               shading='gouraud', norm=LogNorm(vmin=Vmin1, vmax=Vmax1))
+            #plt.plot(t,f[np.argmax(Sxx,axis=0)]*60,'-r',label=r'RPM_REC%g_ch%g'%(m[j],k))
+            #plt.xlabel('Tiempo [seg]')
+            #plt.ylabel('RPM')
+            #plt.title(title)
+            #plt.legend()
+            #ceros = np.where(np.diff(np.sign(np.diff(X[j][k]))))[0]
+            #df[r'time_REC%g_ch%g'%(m[j],k)]=X[j][0][ceros[:len(ceros)-1]]
+            #df[r'rpm_REC%g_ch%g'%(m[j],k)]=1/np.diff(X[j][k][ceros])/2*60
+            #plt.plot(df[r'time_REC%g_ch%g'%(m[j],k)],df[r'rpm_REC%g_ch%g'%(m[j],k)],label=r'REC%g_ch%g'%(m[j],k))
+    #plt.show()
+    return signal
 
 
-get_rpm(dat1_,m)
+inaRPM=get_rpm(ina,m,[3],'RPM(t) ensayo INA')
+cap1RPM=get_rpm(cap1,m2,[4],'RPM(t) ensayo CAPEM 2018')
+cap2RPM=get_rpm(cap2,m3,[4],'RPM(t) ensayo CAPEM 2020')
