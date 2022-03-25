@@ -5,7 +5,7 @@ from scipy import linalg as npl
 import imageio
 
 x=[0]
-y=[np.random.random(1)-0.5]
+y=[np.double(np.random.random(1))-0.5]
 c=0
 X0 = np.array([[1, x[0], x[0] ** 2]])
 Y0 = np.array([np.array(y[0]) * np.ones(3)])
@@ -17,9 +17,9 @@ with imageio.get_writer('mygif.gif', mode='I') as writer:
     while x[-1]<=2.5:
         c = c+1
         x.append(x[-1]+0.01)
-        y.append([2*x[-1]**2+np.random.random(1)-0.5])
+        y.append(2*x[-1]**2+1.2*(np.double(np.random.random(1))-0.5))
         X0 = np.array([[1, x[c], x[c] ** 2]])
-        Y0 = np.array([np.array(y[c][0]) * np.ones(3)])
+        Y0 = np.array([np.array(y[c]) * np.ones(3)])
         M1 = np.dot(np.transpose(X0),X0)
         V1 = np.transpose(X0)*np.transpose(Y0)
         M = M + M1
@@ -30,11 +30,14 @@ with imageio.get_writer('mygif.gif', mode='I') as writer:
         plt.ylabel(r'Perdida de carga $\Delta P$')
         q = np.array(x)
         p = A[0]+A[1]*np.array(x)+A[2]*np.array(x)**2
+        R2=(np.corrcoef(np.array(y),p)[0,1])**2
         h, = plt.plot(q, p, '-b')
         ax = plt.gca()
         pos = [0.1*np.max(x),np.max(y)-(0.1*np.max(y))]
         tx = r'$\Delta P(Q) =$ %2.2f + %2.2f$Q$ + %2.2f$Q^2$'%(A[0],A[1],A[2])
+        tx2 = r'$R^2 =$ %1.4f' % R2
         ann = plt.text(pos[0], pos[1], tx)
+        ann2 = plt.text(pos[0], pos[1]-0.1*pos[1], tx2)
         plt.pause(0.05)
         filename='%g.png'%j
         plt.savefig(filename)
@@ -42,6 +45,7 @@ with imageio.get_writer('mygif.gif', mode='I') as writer:
         writer.append_data(image)
         j += 1
         ann.remove()
+        ann2.remove()
         ax.lines.remove(h)
         plt.draw()
 print(r'a_0=%g, a_1=%g, a_2=%g'%(A[0],A[1],A[2]))
