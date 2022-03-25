@@ -1,0 +1,114 @@
+\documentclass[a4paper,openright,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{enumerate}
+\usepackage[spanish,es-tabla]{babel}
+\geometry{left=20mm,top=20mm,right=20mm}
+\usepackage{parskip}
+\usepackage{float}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{Memoria de calculo para el ajuste automático de la constante de perdida geométrica}
+\author{
+Hugo E. Sosa$^{1}$ \\
+\small{$^1$Div. de Estudios y Ensayos de Componentes Estructurales}\\
+\small{CNEA - Centro Atomico Constituyentes}\\
+\small{\texttt{hsosa@cnea.gov.ar}}
+}
+\maketitle
+
+\section{Descripción del problema y Base del modelo}
+\label{seq:resumen}
+
+Se pretende obtener un algoritmo que ajuste por cuadrados mínimos de las mediciones de perdidas de carga en el CEBP mientras éstas se realizan, es decir, un algoritmo que se actualice con cada nueva medición. Para esto se busca minimizar la suma: 
+
+\begin{equation}
+    \sum_{i=0}{C_m}=\sum_{i=0}{(a_0+a_1x_i+a_2x_i^2-y_i)^2}
+    \label{cm}
+\end{equation}
+
+donde $y_i$ y $x_i$ son las mediciones de perdida de carga y caudal respectivamente. Teniendo en cuenta que $\nabla \sum_{i=0}{C_m}=\sum_{i=0}{\nabla C_m}$, y entendiendo a este gradiente como el operador $\left(\frac{\partial}{\partial a_0},\frac{\partial}{\partial a_1},\frac{\partial}{\partial a_2}\right)$. La ecuación que minimiza \ref{cm} es:
+
+\begin{gather*}
+    \sum_{i=0}{\nabla C_m}=0 \\
+    \text{cuyas componentes son:} \\
+    \sum_{i=0}{2(a_0+a_1x_i+a_2x_i^2-y_i)}=0 \\
+    \sum_{i=0}{2(a_0+a_1x_i+a_2x_i^2-y_i)x_i}=0 \\
+    \sum_{i=0}{2(a_0+a_1x_i+a_2x_i^2-y_i)x_i^2}=0 
+\end{gather*}
+
+Reordenando un poco estas ecuaciones obtenemos el sistema:
+
+\begin{gather}
+    \sum_{i=0}{
+    \begin{pmatrix}
+        1 & x_i & x_i^2 \\
+        x_i & x_i^2 & x_i^3 \\
+        x_i^2 & x_i^3 & x_i^4 \\
+    \end{pmatrix}}\begin{pmatrix}
+        a_0 \\
+        a_1 \\
+        a_2 \\
+    \end{pmatrix}=\sum_{i=0}{\begin{pmatrix}
+        y_i \\
+        y_ix_i \\
+        y_ix_i^2 \\
+    \end{pmatrix}} \\
+    \sum_{i=0}{
+    M_i}\vec{a}=\sum_{i=0}{\vec{v}_i}
+    \label{Sist}
+\end{gather}
+
+Donde la matriz $M_i$ de la ecuación \ref{Sist} solo es inversible a partir de $i\geq 1$. Por lo que puede obtenerse de manera iterativa los coeficientes $(a_0,a_1,a_2)_{i+1}$, a partir de la medición $i=1$ como:
+
+\begin{gather*}
+    \vec{a}_{i+1}=M_{i+1}^{-1}\vec{v}_{i+1} \;\;\;\; \forall i\geq 1 \\
+    \text{donde:} \;\;\;\; M_{i+1}=M_{i}+M_{i-1} \;\; \And \vec{v}_{i+1}=\vec{v}_{i}+\vec{v}_{i-1}
+\end{gather*}
+
+Esta iteración permite obtener un ajuste por cuadrados mínimos de las curvas cuadráticas de perdida de carga versus caudal sin la necesidad de linealizar o tener el ensayo completo para estimar el valor de perdida geométrica. En el siguiente \href{https://drive.google.com/file/d/1TX81c3ouCKZtUD-Jy9ySOgrLSVtw2Lfn/view?usp=sharing}{link} puede verse una animación obtenida de su implementación en Python.
+
+El área de paso de la perdida geométrica puede ser obtenida en cada iteración a partir de la tercer coordenada de $\vec{a}$, es decir $a_2$, por $A_{i+1}=\sqrt{\frac{1}{2\rho a_{2_{i+1}}}}$. En el \textbf{ANEXO} de la presente memoria de calculo se muestra un ejemplo de implementación de código en lenguaje Python:
+
+\lstset{
+        tabsize=2, % tab = 2 espacios
+        backgroundcolor=\color[HTML]{F0F0F0}, % color de fondo
+        captionpos=b, % posición de pie de código, b=debajo
+        basicstyle=\ttfamily, % estilo de letra general
+        columns=fixed, % columnas alineadas
+        extendedchars=true, % ASCII extendido
+        breaklines=true, % partir líneas
+        prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}}, % marcar final de línea con flecha
+        showtabs=false, % no marcar tabulación
+        showspaces=false, % no marcar espacios
+        keywordstyle=\bfseries\color[HTML]{007020}, % estilo de palabras clave
+        commentstyle=\itshape\color[HTML]{60A0B0}, % estilo de comentarios
+        stringstyle=\color[HTML]{4070A0}, % estilo de strings
+}
+
+\lstdefinestyle{abaqusPython}{
+        language=python,
+		% Palabras clave extra
+        morekeywords={CONTINUOUS,NUMBER,MESH,par,name,ParStudy,
+		template,define,sample,combine, generate},
+		% Delimitadores extra, s porque hay uno a cada lado
+}
+
+\newpage
+\section{ANEXO}
+
+\lstinputlisting[style=abaqusPython]{act_CM.py}
+
+
+
+\end{document}
+
