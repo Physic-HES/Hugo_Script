@@ -1,3 +1,4 @@
+from scipy import optimize as opt
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -35,6 +36,12 @@ A_barr=37*np.pi*D_barr**2/4
 A_p=A_CE-A_barr #Area de paso
 P_m=np.pi*D_CE+37*np.pi*D_barr #Perimetro mojado
 D_h=4*A_p/P_m #Diametro hidraulico
+l_dp4=0.2
+l_dp2=0.2005
+l_dp3=0.456
+l_dp5=0.60475
+l_dp6=0.2275
+
 
 E1=[1,2]
 E2=[3,4]
@@ -56,56 +63,129 @@ def prom(E):
     return dep1
 
 
+def func1(x,eps_EC,b,c):
+    dens = pd.read_csv('/home/hugo_sosa/Documents/CNEA/CEBP/EECE-032-2022/dens_temp.txt', delimiter='\t',
+                       index_col=False)
+    ro = dens.values[6, 1]  # densidad
+    D_CE = 0.1082  # Diametro canal de ensayo en m
+    A_CE = np.pi * D_CE ** 2 / 4
+    return eps_EC / (2 * ro * A_CE ** 2) * x ** 2 + b * x + c
+
+def func2(x,f_dp4,b,c):
+    dens = pd.read_csv('/home/hugo_sosa/Documents/CNEA/CEBP/EECE-032-2022/dens_temp.txt', delimiter='\t',
+                       index_col=False)
+    ro = dens.values[6, 1]  # densidad
+    D_CE = 0.1082  # Diametro canal de ensayo en m
+    D_barr = 0.0129  # Diametro barras en m
+    A_CE = np.pi * D_CE ** 2 / 4
+    A_barr = 37 * np.pi * D_barr ** 2 / 4
+    A_p = A_CE - A_barr  # Area de paso
+    P_m = np.pi * D_CE + 37 * np.pi * D_barr  # Perimetro mojado
+    D_h = 4 * A_p / P_m  # Diametro hidraulico
+    l_dp4 = 0.2
+    return (f_dp4 * l_dp4 / D_h) / (2 * ro * A_p ** 2) * x ** 2 + b * x + c
+
+def func3(x,K_sep1,f_dp4,b,c):
+    dens = pd.read_csv('/home/hugo_sosa/Documents/CNEA/CEBP/EECE-032-2022/dens_temp.txt', delimiter='\t',
+                       index_col=False)
+    ro = dens.values[6, 1]  # densidad
+    D_CE = 0.1082  # Diametro canal de ensayo en m
+    D_barr = 0.0129  # Diametro barras en m
+    A_CE = np.pi * D_CE ** 2 / 4
+    A_barr = 37 * np.pi * D_barr ** 2 / 4
+    A_p = A_CE - A_barr  # Area de paso
+    P_m = np.pi * D_CE + 37 * np.pi * D_barr  # Perimetro mojado
+    D_h = 4 * A_p / P_m  # Diametro hidraulico
+    l_dp2 = 0.2005
+    return (f_dp4*l_dp2/D_h+K_sep1+(A_CE**2-A_p**2)/A_CE**2)/(2*ro*A_p**2)*x**2+b*x+c
+
+def func4(x,K_sep2y3,f_dp4,b,c):
+    dens = pd.read_csv('/home/hugo_sosa/Documents/CNEA/CEBP/EECE-032-2022/dens_temp.txt', delimiter='\t',
+                       index_col=False)
+    ro = dens.values[6, 1]  # densidad
+    D_CE = 0.1082  # Diametro canal de ensayo en m
+    D_barr = 0.0129  # Diametro barras en m
+    A_CE = np.pi * D_CE ** 2 / 4
+    A_barr = 37 * np.pi * D_barr ** 2 / 4
+    A_p = A_CE - A_barr  # Area de paso
+    P_m = np.pi * D_CE + 37 * np.pi * D_barr  # Perimetro mojado
+    D_h = 4 * A_p / P_m  # Diametro hidraulico
+    l_dp3 = 0.456
+    return (f_dp4*l_dp3/D_h+K_sep2y3)/(2*ro*A_p**2)*x**2+b*x+c
+
+def func5(x,K_sep4y5,f_dp4,b,c):
+    dens = pd.read_csv('/home/hugo_sosa/Documents/CNEA/CEBP/EECE-032-2022/dens_temp.txt', delimiter='\t',
+                       index_col=False)
+    ro = dens.values[6, 1]  # densidad
+    D_CE = 0.1082  # Diametro canal de ensayo en m
+    D_barr = 0.0129  # Diametro barras en m
+    A_CE = np.pi * D_CE ** 2 / 4
+    A_barr = 37 * np.pi * D_barr ** 2 / 4
+    A_p = A_CE - A_barr  # Area de paso
+    P_m = np.pi * D_CE + 37 * np.pi * D_barr  # Perimetro mojado
+    D_h = 4 * A_p / P_m  # Diametro hidraulico
+    l_dp5 = 0.60475
+    return (f_dp4*l_dp5/D_h+K_sep4y5)/(2*ro*A_p**2)*x**2+b*x+c
+
+def func6(x,f_dp6,b,c):
+    dens = pd.read_csv('/home/hugo_sosa/Documents/CNEA/CEBP/EECE-032-2022/dens_temp.txt', delimiter='\t',
+                       index_col=False)
+    ro = dens.values[6, 1]  # densidad
+    D_CE = 0.1082  # Diametro canal de ensayo en m
+    D_barr = 0.0129  # Diametro barras en m
+    A_CE = np.pi * D_CE ** 2 / 4
+    A_barr = 37 * np.pi * D_barr ** 2 / 4
+    A_p = A_CE - A_barr  # Area de paso
+    P_m = np.pi * D_CE + 37 * np.pi * D_barr  # Perimetro mojado
+    D_h = 4 * A_p / P_m  # Diametro hidraulico
+    l_dp6 = 0.2275
+    return (f_dp6*l_dp6/D_h)/(2*ro*A_p**2)*x**2+b*x+c
+
 def calc(ensayos):
     result = pd.DataFrame()
     for j in np.arange(len(ensayos)):
         #Fiteo:
         # DP1
-        # a_dp1 = (eps_EC)/(2*ro*A_p**2)
-        DP1fit = np.polyfit(ensayos[j]['Caudal_mean[kg/s]'].values, ensayos[j]['DP1_mean[bar]'].values * 1E5, 2)
-        a_dp1 = DP1fit[0]
-        eps_EC = a_dp1 * 2 * ro * A_p ** 2  # perdida de carga EC
+        # a_dp1 = (eps_EC)/(2*ro*A_CE**2)
+        popt1,pcov1=opt.curve_fit(func1,ensayos[j]['Caudal_mean[kg/s]'].values,ensayos[j]['DP1_mean[bar]'].values * 1E5)
+        popt1[0] # perdida de carga EC
 
         # DP4
         # a_dp4 = (f_dp4*l_dp4/D_h)/(2*ro*A_p**2)
-        l_dp4=0.2
-        DP4fit=np.polyfit(ensayos[j]['Caudal_mean[kg/s]'].values,ensayos[j]['DP4_mean[bar]'].values*1E5,2)
-        a_dp4 =DP4fit[0]
-        f_dp4 = a_dp4*2*ro*A_p**2*D_h/l_dp4 #friccion distribuida en barras
-
-        # DP2
-        # a_dp2 = (f*l_dp2/D_h+K_sep1+(A_CE**2-A_p**2)/A_CE**2)/(2*ro*A_p**2)
-        l_dp2=0.2005
-        DP2fit=np.polyfit(ensayos[j]['Caudal_mean[kg/s]'].values,ensayos[j]['DP1_mean[bar]'].values*1E5,2)
-        a_dp2 =DP2fit[0]
-        K_sep1 = a_dp2*2*ro*A_p**2-(A_CE**2-A_p**2)/(A_CE**2)-f_dp4*l_dp2/D_h #perdida de carga consentrada del sep1 usando friccion de dp4
-
-        # DP3
-        # a_dp3 = (f*l_dp3/D_h+K_sep2+K_sep3)/(2*ro*A_p**2)
-        l_dp3=0.456
-        DP3fit=np.polyfit(ensayos[j]['Caudal_mean[kg/s]'].values,ensayos[j]['DP3_mean[bar]'].values*1E5,2)
-        a_dp3 = DP3fit[0]
-        K_sep2y3 = a_dp3*2*ro*A_p**2-f_dp4*l_dp3/D_h #perdida de carga consentrada del sep2y3 usando friccion de dp4
-
-        # DP5
-        # a_dp5 = (f*l_dp5/D_h+K_sep4+K_sep5)/(2*ro*A_p**2)
-        l_dp5=0.60475
-        DP5fit=np.polyfit(ensayos[j]['Caudal_mean[kg/s]'].values,ensayos[j]['DP5_mean[bar]'].values*1E5,2)
-        a_dp5 = DP5fit[0]
-        K_sep4y5 = a_dp5*2*ro*A_p**2-f_dp4*l_dp5/D_h #perdida de carga consentrada del sep4y5 usando friccion de dp4
+        popt2,pcov2=opt.curve_fit(func2,ensayos[j]['Caudal_mean[kg/s]'].values,ensayos[j]['DP4_mean[bar]'].values * 1E5)
+        popt2[0] #friccion distribuida en barras
 
         # DP6
         # a_dp6 = (f_dp6*l_dp6/D_h)/(2*ro*A_p**2)
-        l_dp6=0.2275
-        DP6fit=np.polyfit(ensayos[j]['Caudal_mean[kg/s]'].values,ensayos[j]['DP6_mean[bar]'].values*1E5,2)
-        a_dp6 =DP6fit[0]
-        f_dp6 = a_dp6*2*ro*A_p**2*D_h/l_dp6 #friccion distribuida en barras
+        popt6, pcov6 = opt.curve_fit(func6, ensayos[j]['Caudal_mean[kg/s]'].values,
+                                     ensayos[j]['DP6_mean[bar]'].values * 1E5)
+        popt6[0] #friccion distribuida en barras
 
-        result=result.append({'Eps_EC':eps_EC,'K_sep1':K_sep1,'K_sep2y3':K_sep2y3,
-                              'f_dp4':f_dp4,'K_sep4y5':K_sep4y5,'f_dp6':f_dp6},ignore_index=True)
-    print(result)
+        # DP2
+        # a_dp2 = (f_dp4*l_dp2/D_h+K_sep1+(A_CE**2-A_p**2)/A_CE**2)/(2*ro*A_p**2)
+        popt3,pcov3=opt.curve_fit(lambda x,K_sep1,b,c: func3(x,K_sep1,popt2[0],b,c),
+                                  ensayos[j]['Caudal_mean[kg/s]'].values,ensayos[j]['DP2_mean[bar]'].values * 1E5)
+        popt3[0] #perdida de carga consentrada del sep1 usando friccion de dp4
+
+        # DP3
+        # a_dp3 = (f_dp4*l_dp3/D_h+K_sep2y3)/(2*ro*A_p**2)
+        popt4, pcov4 = opt.curve_fit(lambda x, K_sep2y3, b, c: func4(x, K_sep2y3, popt2[0], b, c),
+                                     ensayos[j]['Caudal_mean[kg/s]'].values, ensayos[j]['DP3_mean[bar]'].values * 1E5)
+        popt4[0] #perdida de carga consentrada del sep2y3 usando friccion de dp4
+
+        # DP5
+        # a_dp5 = (f_dp4*l_dp5/D_h+K_sep4y5)/(2*ro*A_p**2)
+        popt5, pcov5 = opt.curve_fit(lambda x, K_sep4y5, b, c: func5(x, K_sep4y5, popt2[0], b, c),
+                                     ensayos[j]['Caudal_mean[kg/s]'].values, ensayos[j]['DP5_mean[bar]'].values * 1E5)
+        popt5[0] #perdida de carga consentrada del sep4y5 usando friccion de dp4
+
+        result=result.append({'Eps_EC':popt1[0],'Eps_EC_err':np.sqrt(pcov1[0,0]),'K_sep1':popt3[0],'K_sep1_err':np.sqrt(pcov3[0,0]),
+                              'K_sep2y3':popt4[0],'K_sep2y3_err':np.sqrt(pcov4[0,0]),'f_dp4':popt2[0],'f_dp4_err':np.sqrt(pcov2[0,0]),
+                              'K_sep4y5':popt5[0],'K_sep4y5_err':np.sqrt(pcov5[0,0]),'f_dp6':popt6[0],'f_dp6_err':np.sqrt(pcov6[0,0])},ignore_index=True)
+    print(result[['Eps_EC','K_sep1','K_sep2y3','f_dp4','K_sep4y5','f_dp6']])
     return result
 
 ensayos=[prom(E1),prom(E2)]
 resultados=calc(ensayos)
+resultados.to_csv('result_E1y2.csv')
 
