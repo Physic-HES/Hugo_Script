@@ -210,6 +210,7 @@ def calc(ensayos):
         plt.plot(np.linspace(15, 35, num=100),
                  (popt2[0] * l_dp3 / D_h + popt4[0] ) / (2 * ro * A_p ** 2) * np.linspace(15, 35, num=100) ** 2)
 
+
         # DP5
         # a_dp5 = (f_dp4*l_dp5/D_h+K_sep4y5)/(2*ro*A_p**2)
         popt5, pcov5 = opt.curve_fit(lambda x, K_sep4y5: func5(x, K_sep4y5, popt2[0]),
