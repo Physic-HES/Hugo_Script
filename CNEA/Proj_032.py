@@ -29,6 +29,21 @@ def ensayo(cau,barr,type):
 dens=pd.read_csv('/home/hugo_sosa/Documents/CNEA/CEBP/EECE-032-2022/dens_temp.txt', delimiter='\t', index_col=False)
 ro=dens.values[6,1] #densidad
 mu=dens.values[6,3] #viscosidad
+ro_polyC=np.polyfit(dens['Temp_[ºC]'].values,dens['Densidad_[Kg/m3]'].values,6)
+ro_poly=np.poly1d(ro_polyC)
+print('Densidad en [kg/m3]:')
+print(ro_poly)
+mu_polyC=np.polyfit(dens['Temp_[ºC]'].values,dens['Viscosidad_[Pa.s]'].values,6)
+mu_poly=np.poly1d(mu_polyC)
+print('Viscosidad en [Pa.s]:')
+print(mu_poly)
+print(' ')
+temp_=np.linspace(0,100,50)
+plt.figure()
+plt.plot(dens.values[:,0],dens.values[:,1])
+plt.plot(temp_,ro_poly(temp_))
+plt.xlabel('Temperatura [ºC]')
+plt.ylabel(r'Densidad [$kg/m^3$]')
 D_CE=0.1082 #Diametro canal de ensayo en m
 D_barr=0.0129 #Diametro barras en m
 A_CE=np.pi*D_CE**2/4
@@ -41,6 +56,7 @@ l_dp2=0.2005
 l_dp3=0.456
 l_dp5=0.60475
 l_dp6=0.2275
+
 
 
 E1=[1,2]
