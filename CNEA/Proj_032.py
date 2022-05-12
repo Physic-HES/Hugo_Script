@@ -13,7 +13,11 @@ def ensayo(cau,barr,type):
       folder_selected = '/home/hugo_sosa/Documents/CNEA/CEBP/EECE-032-2022/txt/'
       arch = 'EECE0322022_'
       if type=='DP':
-            col=[0,2,4,5,6,7,8,9,13]
+            col = [0, 2, 4, 5, 6, 7, 8, 9, 13]
+            if barr>4:
+                col = [0, 2, 4, 5, 6, 7, 8, 9, 15]
+                if cau>35:
+                    col = [0, 2, 4, 5, 13, 7, 14, 9, 15]
             titles = ['Time [s]', 'Temp [C]', 'DP1 [bar]', 'DP2 [bar]',
                       'DP3 [bar]', 'DP4 [bar]', 'DP5 [bar]', 'DP6 [bar]', 'Caudal [kg/s]']
             datframe = pd.read_csv(folder_selected + arch + r'Q%2.0f_' % cau + r'%02.0f.txt' % barr,
@@ -61,20 +65,25 @@ l_dp6=0.2275
 
 E1=[1,2]
 E2=[3,4]
+E3=[5,6]
+E4=[7,8]
 
 def prom(E):
     dep1=pd.DataFrame()
-    Q = [15, 20, 25, 30, 35]
+    Q1 = [15, 20, 25, 30, 35]
+    Q2 = [15, 20, 25, 30, 35, 40]
+    Q3 = [15, 20, 25, 30, 35, 40, 43]
     for j in E:
+        Q=Q1
         for q in Q:
             ens=ensayo(q,j,'DP')
             dep1=dep1.append({'Caudal_mean[kg/s]': ens['Caudal [kg/s]'].mean(),'Caudal_std[kg/s]': ens['Caudal [kg/s]'].std(),
-                              'DP1_mean[bar]': ens['DP1 [bar]'].mean(),'DP1_std[kg/s]': ens['DP1 [bar]'].std(),
-                              'DP2_mean[bar]': ens['DP2 [bar]'].mean(), 'DP2_std[kg/s]': ens['DP2 [bar]'].std(),
-                              'DP3_mean[bar]': ens['DP3 [bar]'].mean(), 'DP3_std[kg/s]': ens['DP3 [bar]'].std(),
-                              'DP4_mean[bar]': ens['DP4 [bar]'].mean(), 'DP4_std[kg/s]': ens['DP4 [bar]'].std(),
-                              'DP5_mean[bar]': ens['DP5 [bar]'].mean(), 'DP5_std[kg/s]': ens['DP5 [bar]'].std(),
-                              'DP6_mean[bar]': ens['DP6 [bar]'].mean(), 'DP6_std[kg/s]': ens['DP6 [bar]'].std()},
+                              'DP1_mean[bar]': ens['DP1 [bar]'].mean(),'DP1_std[bar]': ens['DP1 [bar]'].std(),
+                              'DP2_mean[bar]': ens['DP2 [bar]'].mean(), 'DP2_std[bar]': ens['DP2 [bar]'].std(),
+                              'DP3_mean[bar]': ens['DP3 [bar]'].mean(), 'DP3_std[bar]': ens['DP3 [bar]'].std(),
+                              'DP4_mean[bar]': ens['DP4 [bar]'].mean(), 'DP4_std[bar]': ens['DP4 [bar]'].std(),
+                              'DP5_mean[bar]': ens['DP5 [bar]'].mean(), 'DP5_std[bar]': ens['DP5 [bar]'].std(),
+                              'DP6_mean[bar]': ens['DP6 [bar]'].mean(), 'DP6_std[bar]': ens['DP6 [bar]'].std()},
                              ignore_index=True)
     return dep1
 
@@ -161,11 +170,9 @@ def func6(x,f_dp6):
 
 def calc(ensayos):
     result = pd.DataFrame()
+    tit=['Ensayo 1','Ensayo 2','Ensayo 3','Ensayo 4']
     for j in np.arange(len(ensayos)):
-        if j==0:
-            title='Ensayo 1'
-        elif j>0:
-            title='Ensayo 2'
+        title=tit[j]
 
         #Fiteo:
         # DP1
@@ -179,8 +186,9 @@ def calc(ensayos):
         plt.title(title)
         plt.grid()
         plt.plot(ensayos[j]['Caudal_mean[kg/s]'].values,ensayos[j]['DP1_mean[bar]'].values * 1E5,'.r',
-                 label='DP1_mean[bar]')
-        plt.plot(np.linspace(15,35,num=100),popt1[0]/(2*ro*A_p**2)*np.linspace(15,35,num=100)**2)
+                 label='DP1_mean')
+        max_cau=np.max(ensayos[j]['Caudal_mean[kg/s]'].values)
+        plt.plot(np.linspace(15,max_cau,num=100),popt1[0]/(2*ro*A_p**2)*np.linspace(15,max_cau,num=100)**2)
         plt.legend()
 
         # DP4
@@ -193,8 +201,9 @@ def calc(ensayos):
         plt.grid()
         plt.title(title)
         plt.plot(ensayos[j]['Caudal_mean[kg/s]'].values, ensayos[j]['DP4_mean[bar]'].values * 1E5, '.',
-                 label='DP4_mean[bar]')
-        plt.plot(np.linspace(15, 35, num=100), (popt2[0]*l_dp4/D_h) / (2 * ro * A_p ** 2) * np.linspace(15, 35, num=100) ** 2)
+                 label='DP4_mean')
+        max_cau=np.max(ensayos[j]['Caudal_mean[kg/s]'].values)
+        plt.plot(np.linspace(15,max_cau, num=100), (popt2[0]*l_dp4/D_h) / (2 * ro * A_p ** 2) * np.linspace(15, max_cau, num=100) ** 2)
 
         # DP6
         # a_dp6 = (f_dp6*l_dp6/D_h)/(2*ro*A_p**2)
@@ -202,9 +211,10 @@ def calc(ensayos):
                                      ensayos[j]['DP6_mean[bar]'].values * 1E5)
         popt6[0] #friccion distribuida en barras
         plt.plot(ensayos[j]['Caudal_mean[kg/s]'].values, ensayos[j]['DP6_mean[bar]'].values * 1E5, '.',
-                 label='DP6_mean[bar]')
-        plt.plot(np.linspace(15, 35, num=100),
-                 (popt6[0] * l_dp6 / D_h) / (2 * ro * A_p ** 2) * np.linspace(15, 35, num=100) ** 2)
+                 label='DP6_mean')
+        max_cau = np.max(ensayos[j]['Caudal_mean[kg/s]'].values)
+        plt.plot(np.linspace(15, max_cau, num=100),
+                 (popt6[0] * l_dp6 / D_h) / (2 * ro * A_p ** 2) * np.linspace(15, max_cau, num=100) ** 2)
 
         # DP2
         # a_dp2 = (f_dp4*l_dp2/D_h+K_sep1+(A_CE**2-A_p**2)/A_CE**2)/(2*ro*A_p**2)
@@ -212,9 +222,10 @@ def calc(ensayos):
                                   ensayos[j]['Caudal_mean[kg/s]'].values,ensayos[j]['DP2_mean[bar]'].values * 1E5)
         popt3[0] #perdida de carga consentrada del sep1 usando friccion de dp4
         plt.plot(ensayos[j]['Caudal_mean[kg/s]'].values, ensayos[j]['DP2_mean[bar]'].values * 1E5, '.',
-                 label='DP2_mean[bar]')
-        plt.plot(np.linspace(15, 35, num=100),
-                 (popt2[0] * l_dp2 / D_h+popt3[0]+(A_CE**2-A_p**2)/A_CE**2) / (2 * ro * A_p ** 2) * np.linspace(15, 35, num=100) ** 2)
+                 label='DP2_mean')
+        max_cau = np.max(ensayos[j]['Caudal_mean[kg/s]'].values)
+        plt.plot(np.linspace(15, max_cau, num=100),
+                 (popt2[0] * l_dp2 / D_h+popt3[0]+(A_CE**2-A_p**2)/A_CE**2) / (2 * ro * A_p ** 2) * np.linspace(15, max_cau, num=100) ** 2)
 
         # DP3
         # a_dp3 = (f_dp4*l_dp3/D_h+K_sep2y3)/(2*ro*A_p**2)
@@ -222,9 +233,10 @@ def calc(ensayos):
                                      ensayos[j]['Caudal_mean[kg/s]'].values, ensayos[j]['DP3_mean[bar]'].values * 1E5)
         popt4[0] #perdida de carga consentrada del sep2y3 usando friccion de dp4
         plt.plot(ensayos[j]['Caudal_mean[kg/s]'].values, ensayos[j]['DP3_mean[bar]'].values * 1E5, '.',
-                 label='DP3_mean[bar]')
-        plt.plot(np.linspace(15, 35, num=100),
-                 (popt2[0] * l_dp3 / D_h + popt4[0] ) / (2 * ro * A_p ** 2) * np.linspace(15, 35, num=100) ** 2)
+                 label='DP3_mean')
+        max_cau = np.max(ensayos[j]['Caudal_mean[kg/s]'].values)
+        plt.plot(np.linspace(15, max_cau, num=100),
+                 (popt2[0] * l_dp3 / D_h + popt4[0] ) / (2 * ro * A_p ** 2) * np.linspace(15, max_cau, num=100) ** 2)
 
 
         # DP5
@@ -233,9 +245,10 @@ def calc(ensayos):
                                      ensayos[j]['Caudal_mean[kg/s]'].values, ensayos[j]['DP5_mean[bar]'].values * 1E5)
         popt5[0] #perdida de carga consentrada del sep4y5 usando friccion de dp4
         plt.plot(ensayos[j]['Caudal_mean[kg/s]'].values, ensayos[j]['DP5_mean[bar]'].values * 1E5, '.',
-                 label='DP5_mean[bar]')
-        plt.plot(np.linspace(15, 35, num=100),
-                 (popt2[0] * l_dp5 / D_h + popt5[0]) / (2 * ro * A_p ** 2) * np.linspace(15, 35, num=100) ** 2)
+                 label='DP5_mean')
+        max_cau = np.max(ensayos[j]['Caudal_mean[kg/s]'].values)
+        plt.plot(np.linspace(15, max_cau, num=100),
+                 (popt2[0] * l_dp5 / D_h + popt5[0]) / (2 * ro * A_p ** 2) * np.linspace(15, max_cau, num=100) ** 2)
 
         result=result.append({'Eps_EC':popt1[0],'Eps_EC_err':np.sqrt(pcov1[0,0]),'K_sep1':popt3[0],'K_sep1_err':np.sqrt(pcov3[0,0]),
                               'K_sep2y3':popt4[0],'K_sep2y3_err':np.sqrt(pcov4[0,0]),'f_dp4':popt2[0],'f_dp4_err':np.sqrt(pcov2[0,0]),
@@ -243,9 +256,9 @@ def calc(ensayos):
         plt.legend()
     print(result[['Eps_EC', 'K_sep1', 'K_sep2y3', 'f_dp4', 'K_sep4y5', 'f_dp6']])
     plt.show()
-    return result
+    return result, ensayos
 
-ensayos=[prom(E1),prom(E2)]
+ensayos=[prom(E1),prom(E2),prom(E3),prom(E4)]
 resultados=calc(ensayos)
-resultados.to_csv('result_E1y2.csv')
+#resultados.to_csv('result_E1y2.csv')
 
