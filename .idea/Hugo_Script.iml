@@ -8,6 +8,8 @@
       <sourceFolder url="file://$MODULE_DIR$/IAMEN/newportxps-master/newportxps" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/IAMEN/camaras" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/IAMEN/XPS-Q8/XPS-Q-Drivers/XPS-Q_Drivers/XPS-Q_Python_Drivers" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/UBA/Laboratorio 4" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/IAMEN/Desarrollos" isTestSource="false" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
