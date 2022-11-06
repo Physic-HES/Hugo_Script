@@ -95,7 +95,7 @@ def picos(data):
     ind,_=find_peaks(data_,height=np.max(data_)*0.1,prominence=1, width=20)
     return data.values[ind,:]
 
-graf_all(2)
+graf_all(3)
 
 #Carga manual de los minimos de cada grafico
 Yp_cobre=np.zeros((4, 3))
@@ -127,7 +127,7 @@ ax.legend([aj1,aj2,aj3,aj4],[f'{0} mgr',f'{680} mgr',f'{1743} mgr',f'{2136} mgr'
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
 ax.set_xlabel('Numero de minimo',fontsize=14)
-ax.set_ylabel('Distancia de minimos',fontsize=14)
+ax.set_ylabel(r'Distancia de minimos $Y_p$',fontsize=14)
 plt.title('Distribucion de minimos para el Cobre')
 plt.xlim([0,18])
 plt.ylim([0,0.06])
@@ -163,7 +163,7 @@ ax2.legend([aj1_,aj2_,aj3_,aj4_,aj5_],[f'{0} mgr',f'{680} mgr',f'{1743} mgr',f'{
 plt.xticks(fontsize=12)
 plt.yticks(fontsize=12)
 ax2.set_xlabel('Numero de minimo',fontsize=14)
-ax2.set_ylabel('Distancia de minimos',fontsize=14)
+ax2.set_ylabel(r'Distancia de minimos $Y_p$',fontsize=14)
 plt.title('Distribucion de minimos para el Acero')
 plt.xlim([0,14])
 plt.ylim([0,0.065])
