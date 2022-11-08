@@ -9,7 +9,7 @@ fs=10000
 duration = 10  # seconds
 #myrecording = sd.rec(duration * fs, samplerate=fs, channels=2,dtype='float64')
 #myrecording = sd.playrec(myarray, fs, channels=2)
-myrecording=np.sin(2*np.pi*(100*np.sin(2*np.pi*0.5*np.linspace(0,duration,duration*fs))+700)*np.linspace(0,duration,duration*fs))
+myrecording=np.sin(2*np.pi*250*np.linspace(0,duration,duration*fs)+75*np.sin(2*np.pi*0.5*np.linspace(0,duration,duration*fs)))
 print("Recording Audio")
 sd.wait()
 print("Audio recording complete , Play Audio")
