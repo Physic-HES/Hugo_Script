@@ -68,8 +68,9 @@ def grafic():
         plt.grid()
 
 
-grafic()
+#grafic()
 #print(datos[1][:,1])
 #plt.figure(datos[1][:,0],np.unwrap(datos[1][:,1]))
+#h=np.fft.fft(datos[])
 plt.show()
 
