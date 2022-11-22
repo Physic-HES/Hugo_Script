@@ -5,17 +5,17 @@ import scipy.signal as S
 import scipy.integrate as inte
 from matplotlib.colors import LogNorm
 
-fs=10000
-duration = 10  # seconds
+fs=90000
+duration = 5  # seconds
 #myrecording = sd.rec(duration * fs, samplerate=fs, channels=2,dtype='float64')
-#myrecording = sd.playrec(myarray, fs, channels=2)
-myrecording=np.sin(2*np.pi*250*np.linspace(0,duration,duration*fs)+75*np.sin(2*np.pi*0.5*np.linspace(0,duration,duration*fs)))
+myarray=np.sin(2*np.pi*150*np.linspace(0,duration,duration*fs))
+myrecording = sd.playrec(myarray, fs, channels=2)
 print("Recording Audio")
 sd.wait()
-print("Audio recording complete , Play Audio")
-sd.play(myrecording, fs)
-sd.wait()
-print("Play Audio Complete")
+print("Audio recording complete")
+#sd.play(myrecording, fs)
+#sd.wait()
+#print("Play Audio Complete")
 
 
 def cascada(x,fs,wind='hann',lin=2048,overl=50):
@@ -26,19 +26,19 @@ def cascada(x,fs,wind='hann',lin=2048,overl=50):
     return f,t,Spec
 
 
-#signal=myrecording[:,0]+myrecording[:,1]
+signal=myrecording[:,0]+myrecording[:,1]
 #signal_int=inte.cumtrapz(signal,dx=1/fs)
-#f,t,Sxx=cascada(signal_int,fs,lin=1000,overl=50)
-#plt.subplot(211)
-#tiem=np.linspace(0,duration,len(myrecording[:,0])-1)
-#plt.plot(tiem,signal_int)
-#plt.ylabel('Voltaje [V]')
-#plt.xlim([0,np.max(tiem)])
-#plt.grid()
-#plt.subplot(212)
-#plt.pcolormesh(t,f,Sxx,shading='gouraud',norm=LogNorm(vmin=np.max(Sxx)/1E5, vmax=np.max(Sxx)))
-#plt.xlabel('Tiempo [s]')
-#plt.ylabel('Frecuencia [Hz]')
-#plt.ylim([0,2500])
-#plt.show()
+f,t,Sxx=cascada(signal,fs,lin=75,overl=50)
+plt.subplot(211)
+tiem=np.linspace(0,duration,len(myrecording[:,0]))
+plt.plot(tiem,signal)
+plt.ylabel('Voltaje [V]')
+plt.xlim([0,np.max(tiem)])
+plt.grid()
+plt.subplot(212)
+plt.pcolormesh(t,f,Sxx,shading='gouraud',norm=LogNorm(vmin=np.max(Sxx)/1E5, vmax=np.max(Sxx)))
+plt.xlabel('Tiempo [s]')
+plt.ylabel('Frecuencia [Hz]')
+plt.ylim([0,50000])
+plt.show()
 
