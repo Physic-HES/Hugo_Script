@@ -15,10 +15,10 @@ aud1_fotoD=pd.read_csv(path1_,header=None,delimiter=' ')
 aud2_fotoD=pd.read_csv(path2_,header=None,delimiter=' ')
 #plt.plot(aud1_fotoD.values[:,0],aud1_fotoD.values[:,1])
 FS=1/aud1_fotoD.values[1,0]
-f,t,Sxx=S.spectrogram(aud1_fotoD.values[int(1*FS):int(2*FS),1],FS,window='hann',nperseg=2*75,
-                              noverlap=int(95/100*2*75),scaling='spectrum')
-plt.pcolormesh(t,f,Sxx,shading='gouraud',norm=LogNorm(vmin=np.max(Sxx)/1E5, vmax=np.max(Sxx)),cmap='jet')
+f,t,Sxx=S.spectrogram(aud1_fotoD.values[int(2.75*FS):int(3.5*FS),1],FS,window='hann',nperseg=2*1500,
+                              noverlap=int(50/100*2*1500),scaling='spectrum')
+plt.pcolormesh(t,f*632E-9,Sxx,shading='gouraud',norm=LogNorm(vmin=np.max(Sxx)/1E5, vmax=np.max(Sxx)),cmap='jet')
 plt.figure()
 t1=np.linspace(0,1/fs1*len(aud1),len(aud1))
-plt.plot(t1[int(0.5*fs1):int(2.5*fs1)],aud1[int(0.5*fs1):int(2.5*fs1)])
+plt.plot(t1[int(2.75*fs1):int(3.5*fs1)],aud1[int(2.75*fs1):int(3.5*fs1)])
 plt.show()
