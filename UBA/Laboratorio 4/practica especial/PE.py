@@ -99,6 +99,7 @@ def grafic2():
             popt1, pcov1 = op.curve_fit(sin_mod, t2, f2[len(f2)-1-ind] * lamb / 2 * 1000, [5, 1, 736])
         elif j==2:
             popt1, pcov1 = op.curve_fit(sin_mod, t2, f2[len(f2)-1-ind] * lamb / 2 * 1000, [5, 1, 150])
+            print(f'error en la amplitud de V= {np.sqrt(pcov1[0,0])}')
         t2=np.linspace(0,np.max(t),1000)
         Y=sin_mod(t2,popt1[0],popt1[1],popt1[2])
         plt.plot(t2*1000,Y,label=r'Ajuste $|vel|$')
@@ -121,6 +122,7 @@ def grafic2():
         plt.grid()
         plt.subplot(313)
         plt.plot(tiem*1000,1E3*(np.cumsum(vel)*tiem[1]-(np.cumsum(vel)*tiem[1]).mean()),'m',label='Desplazamiento')
+        print(np.max(np.max(1E3*(np.cumsum(vel)*tiem[1]-(np.cumsum(vel)*tiem[1]).mean()))))
         plt.ylabel(r'Desplazamiento [$\mu m$]')
         plt.xlabel(r'Tiempo [$ms$]')
         plt.xlim([np.min(tiem*1000),np.max(tiem*1000)])
@@ -128,7 +130,7 @@ def grafic2():
     plt.show()
 
 #grafic()
-grafic2()
+#grafic2()
 #print(datos[1][:,1])
 #plt.figure(datos[1][:,0],np.unwrap(datos[1][:,1]))
 
@@ -197,10 +199,10 @@ def resp(datos):
     return vel_desp
 
 #plt.show()
-datos2=[]
-for j in range(150,800,5):
-    dat=pd.read_csv(f'/home/hp1opticaiamend/PycharmProjects/Hugo_Script/UBA/Laboratorio 4/practica especial/Barrido_caracterizacion/barrido_{j}Hz_2Vpp.txt',delimiter=' ',header=None)
-    datos2.append(dat.values)
+#datos2=[]
+#for j in range(150,800,5):
+#    dat=pd.read_csv(f'/home/hp1opticaiamend/PycharmProjects/Hugo_Script/UBA/Laboratorio 4/practica especial/Barrido_caracterizacion/barrido_{j}Hz_2Vpp.txt',delimiter=' ',header=None)
+#    datos2.append(dat.values)
 
 #vel_desp=resp(datos2)
 #f=range(150,800,5)
@@ -210,8 +212,8 @@ for j in range(150,800,5):
 
 #plt.plot(f,pk)
 #plt.plot(f,pk,'.')
-#plt.ylabel(r'Desplazamiento 0-pk [$\mu m$]')
-#plt.xlabel('Frecuencia [Hz]')
+#plt.ylabel(r'Velocidad 0-pk [$mm/s$]',fontsize=14)
+#plt.xlabel('Frecuencia [Hz]',fontsize=14)
 #plt.grid()
 #plt.show()
 
@@ -243,9 +245,9 @@ def peak_pro(golpe):
     plt.plot((golpe[peak_up,0]-golpe[peak_dawn,0])/2+golpe[peak_dawn,0],vel)
     plt.show()
 
-#path_doppler150hz_t='/home/hp1opticaiamend/PycharmProjects/Hugo_Script/UBA/Laboratorio 4/practica especial/tiempo2_doppler_150Hz_2Vpp'
-#path_doppler150hz_d='/home/hp1opticaiamend/PycharmProjects/Hugo_Script/UBA/Laboratorio 4/practica especial/datos_doppler_635Hz_2Vpp'
-#doppler150hz_t=pd.read_csv(path_doppler150hz_t,header=None)
-#doppler150hz_d=pd.read_csv(path_doppler150hz_d,header=None)
-#datos_dia1_150Hz=np.c_[doppler150hz_t,doppler150hz_d]
-#peak_pro(datos_dia1_150Hz)
+path_doppler150hz_t='/home/hp1opticaiamend/PycharmProjects/Hugo_Script/UBA/Laboratorio 4/practica especial/tiempo2_doppler_150Hz_2Vpp'
+path_doppler150hz_d='/home/hp1opticaiamend/PycharmProjects/Hugo_Script/UBA/Laboratorio 4/practica especial/datos_doppler_635Hz_2Vpp'
+doppler150hz_t=pd.read_csv(path_doppler150hz_t,header=None)
+doppler150hz_d=pd.read_csv(path_doppler150hz_d,header=None)
+datos_dia1_150Hz=np.c_[doppler150hz_t,doppler150hz_d]
+peak_pro(datos_dia1_150Hz)
