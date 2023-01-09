@@ -95,7 +95,7 @@ class camThread(threading.Thread):
 
 def camPreview(previewName, camID):
     cv2.namedWindow(previewName)
-    cam = cv2.VideoCapture(camID, cv2.CAP_DSHOW)
+    cam = cv2.VideoCapture(camID)#, cv2.CAP_DSHOW)
     cam.set(cv2.CAP_PROP_EXPOSURE, -5)
     w = 2048
     h = 2048
