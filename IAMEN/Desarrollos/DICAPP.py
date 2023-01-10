@@ -1,41 +1,28 @@
 import tkinter as tk
-import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from tkinter import ttk
 import cv2
 import numpy as np
 import time
 from PIL import Image, ImageTk
 
+#APP
 root = tk.Tk()
-
-#DIC
-camID=0
-#figure1 = plt.Figure(figsize=(6, 5), dpi=100)
-#ax1 = figure1.add_subplot(111)
-#bar1 = FigureCanvasTkAgg(figure1, root)
-#bar1.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
 label_widget = tk.Label(root)
 label_widget.pack()
 root.bind('<Escape>', lambda e: root.quit())
+
+#DIC
+camID=0
 cam = cv2.VideoCapture(camID)
-#cam.set(cv2.CAP_PROP_EXPOSURE, -4) #-4 es 80ms
 w = int(cam.get(3))
 h = int(cam.get(4))
 zona=63 #tamaño de zonas donde se correlaciona una porcion interior
 div=zona/3
 campo=80 #Cantidad de discretizaciones (discrt)
 print(f'Tamaño de camara: {w}x{h}')
-#cam.set(3, w)
-#cam.set(4, h)
-#if cam.isOpened():  # try to get the first frame
-#    rval, frame_0 = cam.read()
-#else:
-#    rval = False
-
 raw_in = 60
 col_in = 170
-discrt = 2
+discrt = 4
 rgy=range(int(raw_in+zona/2),int(raw_in+zona/2+campo*discrt),int(discrt))
 rgx=range(int(col_in+zona/2),int(col_in+zona/2+campo*discrt),int(discrt))
 map_def_x = np.zeros((len(rgy), len(rgx)))
@@ -69,11 +56,7 @@ def ciclo():
         mapa=map_def
     stress_x = (mapa[:-int(discrt),int(discrt):]-mapa[:-int(discrt),:-int(discrt)])/(2*discrt)
     stress_y = (mapa[int(discrt):,:-int(discrt)]-mapa[:-int(discrt),:-int(discrt)])/(2*discrt)
-    #stress = np.where(stress_x+stress_y>=0,np.sqrt(stress_x**2+stress_y**2),0)
-    #stress = np.where(stress_x+stress_y< 0, -np.sqrt(stress_x ** 2 + stress_y ** 2), stress)
-    #stress-=np.min(stress)
     stress=np.sqrt(stress_x**2+stress_y**2)
-    #stress=normalize(stress,0,255)
     image_stres[int(raw_in+zona/3+discrt/2):int(raw_in+zona/3+(campo-1)*discrt+discrt/2),
                     int(col_in+zona/3+discrt/2):int(col_in+zona/3+(campo-1)*discrt+discrt/2)]=5*mapa[:-int(discrt),:-int(discrt)]
     stress_color=cv2.applyColorMap(image_stres.astype('uint8'), cv2.COLORMAP_INFERNO)
@@ -81,12 +64,10 @@ def ciclo():
     opencv_image = cv2.cvtColor(merge, cv2.COLOR_BGR2RGBA)
     captured_image = Image.fromarray(opencv_image)
     photo_image = ImageTk.PhotoImage(image=captured_image)
+    #Update frame in APP
     label_widget.photo_image = photo_image
     label_widget.configure(image=photo_image)
     label_widget.after(10, ciclo)
-    #key = cv2.waitKey(20)
-    #if key & 0xFF == ord('q'):  # exit on q
-    #    break
 
 button1 = tk.Button(root, text="Preview DIC", command=ciclo)
 button1.pack()
