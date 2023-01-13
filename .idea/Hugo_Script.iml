@@ -9,7 +9,7 @@
       <sourceFolder url="file://$MODULE_DIR$/IAMEN/camaras" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/IAMEN/XPS-Q8/XPS-Q-Drivers/XPS-Q_Drivers/XPS-Q_Python_Drivers" isTestSource="false" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="C:\Users\vboxuser\anaconda3" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="TestRunnerService">

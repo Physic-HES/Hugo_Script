@@ -52,7 +52,7 @@ def lines(count):
         canvas.coords(line4, pts[1][0], pts[0][1], pts[1][0], pts[2][1])
 
 def initcam():
-    vid = cv2.VideoCapture(int(camID.get()))
+    vid = cv2.VideoCapture(int(camID.get()), cv2.CAP_DSHOW)
     width, height = 800, 600
     vid.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     vid.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
