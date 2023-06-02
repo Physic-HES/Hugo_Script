@@ -1,13 +1,28 @@
 import time
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from mpl_toolkits.mplot3d import Axes3D
+import tkinter as tk
+from tkinter import ttk
+from PIL import Image, ImageTk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
+def porcent(value):
+    global umbral
+    umbral= eval(value)/100
+    print(f'El umbral de detección se fijó en {eval(value)} %')
 
-def guardar(event):
-    if event.key == 'g':
-        np.savetxt('dot3d_' + time.strftime('%Y%m%d',time.localtime()) + '.txt',ptos,delimiter='\t')
-        exit()
+def expo(value):
+    global exp
+    exp= eval(value)
+    print(f'La exposicion se fijó en {exp}')
+
+def guardar():
+    name='dot3d_' + time.strftime('%Y%m%d',time.localtime()) + '.txt'
+    np.savetxt(name,ptos,delimiter='\t')
+    print('Los datos fueron guardados como '+name)
+
 
 def axisEqual3D(ax):
     extents = np.array([getattr(ax, 'get_{}lim'.format(dim))() for dim in 'xyz'])
@@ -50,37 +65,38 @@ def dots(X1,X2,d,f,w,h):
     return dat
 
 
-def plot_ptos(ptos):
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-    ax.scatter(ptos[:,0],ptos[:,1],ptos[:,2])
-    axisEqual3D(ax)
-    plt.show()
-
 def get_ims():
-    plt.ion()
     global X1, X2
     cam = cv2.VideoCapture(0)
     cam.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
-    w=2560
+    w = 2560
     cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
     h = 960
-    cam.set(cv2.CAP_PROP_AUTO_EXPOSURE,1)
-    cam.set(cv2.CAP_PROP_EXPOSURE, 140)
+    cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
+    cam.set(cv2.CAP_PROP_EXPOSURE, int(exp))
     rval, frame = cam.read()
     cv2.imshow(f'Modo Automatico de deteccion', frame)
     cv2.destroyAllWindows()
-    fig = plt.figure()
-    ax = plt.subplot2grid((2,3),(0,1),colspan=2,rowspan=2,projection='3d')
-    axL = plt.subplot2grid((2,3),(0,0))
-    axR = plt.subplot2grid((2,3),(1,0))
+    time.sleep(0.01)
+    fig1 = Figure()
+    ax1 = fig1.add_subplot(projection='3d')
+    #fig2 = Figure()
+    #ax2 = fig2.add_subplot()
+    cloud = ax1.scatter(0, 0, 0)
+    ax1.set_xlabel('Eje X [mm]')
+    ax1.set_ylabel('Eje Y [mm]')
+    ax1.set_zlabel('Eje z [mm]')
+    canvas1 = FigureCanvasTkAgg(fig1, master=marco1)
+    canvas1.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+    #canvas2 = FigureCanvasTkAgg(fig2, master=marco2)
+    #canvas2.get_tk_widget().pack(fill=tk.BOTH, expand=True)
     step=time.time()
     while True:
         global im1, im2, ptos
         rval, frame = cam.read()
         for k in range(2):
             red_image=frame[:,int(k*w/2):int((k+1)*w/2),2]
-            (thresh , binaryIM) = cv2.threshold(red_image, int(0.40*np.max(red_image)), 255, cv2.THRESH_BINARY)
+            (thresh , binaryIM) = cv2.threshold(red_image, int(umbral*np.max(red_image)), 255, cv2.THRESH_BINARY)
             output = cv2.connectedComponentsWithStats(binaryIM, 3, cv2.CV_32S)
             (numLabels, labels, stats, centroids) = output
             image=frame[:,int(k*w/2):int((k+1)*w/2),:].copy()
@@ -97,35 +113,62 @@ def get_ims():
             if k == 0:
                 im1 = X1.T.copy()
                 im1=ordenar(im1)
-                axL.imshow(cv2.cvtColor(rescale_frame(image, 20),cv2.COLOR_BGR2RGB))
-                axL.axis('off')
-                axL.set_title('Left')
+                imageL=image
             elif k == 1:
                 im2 = X1.T.copy()
                 im2=ordenar(im2)
-                axR.imshow(cv2.cvtColor(rescale_frame(image, 20),cv2.COLOR_BGR2RGB))
-                axR.axis('off')
-                axR.set_title('Right')
+                imageR=image
+        image2=cv2.hconcat([imageL,imageR])
+        #ax2.imshow(rescale_frame(image2,15))
+        #ax2.axis('off')
         if im1.shape[0]==im2.shape[0]:
             ptos=dots(im1,im2,60,4.3,int(w/2),h)
-            ax.scatter(ptos[:, 0], ptos[:, 1], ptos[:, 2])
-            ax.set_xlim([np.min(ptos[:,0])-10,np.max(ptos[:,0])+10])
-            ax.set_ylim([150, 250])
-            ax.set_zlim([np.min(ptos[:, 2]) - 10, np.max(ptos[:, 2]) + 10])
-            ax.set_title('3D Reconstruction')
-            ax.set_xlabel('Eje X [mm]')
-            ax.set_ylabel('Eje Y [mm]')
-            ax.set_zlabel('Eje z [mm]')
-            axisEqual3D(ax)
-            plt.show()
-            plt.pause(0.0000001)
-            ax.cla()
-            axL.cla()
-            axR.cla()
+            cloud._offsets3d = (ptos[:,0],ptos[:,1],ptos[:,2])
+            #canvas1.draw()
+            #canvas2.draw()
+            time.sleep(0.001)
+            ax1.clear()
+            #ax2.clear()
             print(f'Dimention Ok at {1/(time.time()-step):3.3} Hz of Sample Rate')
         elif np.abs(im1.shape[0]-im2.shape[0])>0:
             print('Dimention is Fail')
-        fig.canvas.mpl_connect('key_press_event',guardar)
         step=time.time()
 
+
+app = tk.Tk()
+s=ttk.Style()
+s.theme_use('alt')
+app.title('Fotogrametria 3D - IAMEND')
+marco1 = tk.LabelFrame(app,text='Nube de puntos')
+marco1.pack(side=tk.LEFT)
+#canvas1 = tk.Canvas(marco1)
+#canvas1.pack(anchor='nw',fill='both',expand=1)
+
+#marco2 = tk.LabelFrame(app,text='Estereo visión')
+#marco2.pack(anchor='nw',fill='both',expand=1)
+#canvas2 = tk.Canvas(marco2)
+#canvas2.pack(anchor='nw',fill='both',expand=1)
+
+marco3 = tk.LabelFrame(app,text='Configuración')
+marco3.pack(anchor='nw',fill='both',expand=1)
+
+label_slider1 = tk.Label(marco3, text="Umbral de intensidad máxima promedio")
+label_slider1.pack()
+slider1 = ttk.Scale(marco3, from_=0, to=100, command=porcent)
+slider1.set(40)
+slider1.pack(pady=10)
+
+label_slider2 = tk.Label(marco3, text="Exposición de la Camara")
+label_slider2.pack()
+slider2 = ttk.Scale(marco3, from_=0, to=1866, command=expo)
+slider2.set(140)
+slider2.pack(pady=10)
+
+# Botón para guardar datos
+button_save = tk.Button(marco3, text="Guardar datos", command=guardar)
+button_save.pack(pady=10)
+
 get_ims()
+app.mainloop()
+
+

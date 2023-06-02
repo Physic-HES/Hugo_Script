@@ -1,8 +1,8 @@
 import cv2
-import matplotlib.pyplot as plt
 
-cam=cv2.VideoCapture(0)
+cam=cv2.VideoCapture(2)
 print(cam)
 rval, frame=cam.read()
-plt.imshow(frame)
-plt.show()
+cv2.imshow('lumenera',frame)
+cv2.waitKey(0)
+cv2.destroyAllWindows()

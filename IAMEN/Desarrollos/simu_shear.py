@@ -6,6 +6,17 @@ from tqdm import tqdm
 from scipy import integrate as integ
 import scipy.ndimage
 
+
+def axisEqual3D(ax):
+    extents = np.array([getattr(ax, 'get_{}lim'.format(dim))() for dim in 'xyz'])
+    sz = extents[:,1] - extents[:,0]
+    centers = np.mean(extents, axis=1)
+    maxsize = max(abs(sz))
+    r = maxsize/2
+    for ctr, dim in zip(centers, 'xyz'):
+        getattr(ax, 'set_{}lim'.format(dim))(ctr - r, ctr + r)
+
+
 def rescale_frame(frame, percent=75):
     width = int(frame.shape[1] * percent/ 100)
     height = int(frame.shape[0] * percent/ 100)
@@ -20,9 +31,10 @@ def normalize(arr, t_min, t_max):
 
 tam_col,tam_raw=740,480
 X,Y=np.meshgrid(range(tam_col),range(tam_raw))
+f_corr=3E2 #factor de correccion
 shift_obj=0.011E6
 D=0.477E6
-lamb=0.6328
+lamb=0.532
 mu=6
 print(f'periodo espacial k = {1/(np.sin(np.arctan(shift_obj/D))/lamb*mu)}')
 f=np.sin(np.arctan(shift_obj/D))/lamb*mu
@@ -74,13 +86,15 @@ def speckle_G(Im,tam_g):
     speck=np.abs(imagefield)**2
     return gauss_0*speck
 
+
 #generacion de speckle
 gauss_0=np.exp(-1/(2*(1.5*c)**2)*((X-740/2)**2+(Y-480/2)**2))
 speckle2=speckle_G(X,2)
 
 #Fase de la deformacion
-amp=150 #amplitud de la deformacion en micrones
-Z=-4*np.pi/lamb*amp*(X-740/2)/(c**2)*np.exp(-1/(2*c**2)*((X-740/2)**2+(Y-480/2)**2))
+amp=5 #amplitud de la deformacion en micrones
+#DERIVADA de la deformacion fuera de plano (Out-of-Plane Deformation)
+Z=-4*np.pi*(shift_obj/f_corr)/lamb*amp*np.exp(-1/(2*c**2)*((X-740/2)**2+(Y-480/2)**2))*(X-740/2)/(c**2)
 ph_wrap=(Z+np.pi)%(2*np.pi)
 phase=ph_wrap-np.mean(ph_wrap)
 
@@ -88,27 +102,34 @@ phase=ph_wrap-np.mean(ph_wrap)
 Im_0=normalize(speckle2*(np.sin(2*np.pi*f*X)/2+1),0,1)
 Im_1=normalize(speckle2*(np.sin(2*np.pi*f*X+phase)/2+1),0,1)
 
+cv2.imshow('prueba',Im_1)
+cv2.destroyWindow('prueba')
+
 plt.figure()
-plt.imshow(Im_0,cmap='gray') #imagen sin carga
+plt.imshow(np.log2(Im_0+1),cmap='gray') #imagen sin carga
 plt.figure()
-plt.imshow(Im_1,cmap='gray') #imagen con carga
+plt.imshow(np.log2(Im_1+1),cmap='gray') #imagen con carga
 plt.figure()
-plt.imshow(speckle2,cmap='gray') #speckle simulado (sin portadora sin portadora)
+plt.imshow(np.sin(2*np.pi*f*X+phase)/2+1-(np.sin(2*np.pi*f*X)/2+1),cmap='gray') #portadora con carga menos portadora sin carga
+plt.figure()
+plt.imshow(np.log2(speckle2+1),cmap='gray') #speckle simulado (sin portadora)
+
+# construccion de la ventana sobre la portadora
+gauss=np.exp(-1/2*(((X-(tam_col/2+f*tam_col-4))/(1.5*c2))**2+((Y-tam_raw/2)/c2)**2))
+gauss=np.where(((X-(tam_col/2+f*tam_col-4))/(1.5*(c2*2)))**2+((Y-tam_raw/2)/(c2*2))**2<1,gauss,0)
 
 plt.figure()
 plt.imshow(normalize(np.abs(Im_1-Im_0),0,1),cmap='gray') #imagen resta
 fftIm_0=np.abs(np.fft.fftshift(np.fft.fft2(Im_0))) #fft de la imagen de referencia
 plt.figure()
 plt.imshow(np.log2(fftIm_0+1)) #ploteo logaritmico de la fft de la imagen de referencia
+plt.imshow(gauss,cmap='hot',alpha=.2)
 fftIm_1=np.abs(np.fft.fftshift(np.fft.fft2(Im_1))) #fft de la imagen con carga
 plt.figure()
 plt.imshow(np.log2(fftIm_1+1)) #ploteo logaritmico de la fft de la imagen con carga
-
-
-# construccion de la ventana sobre la portadora
-gauss=np.exp(-1/2*(((X-(tam_col/2+f*tam_col-4))/(1.5*c2))**2+((Y-tam_raw/2)/c2)**2))
-gauss=np.where(((X-(tam_col/2+f*tam_col-4))/(1.5*(c2*2)))**2+((Y-tam_raw/2)/(c2*2))**2<1,gauss,0)
 plt.imshow(gauss,cmap='hot',alpha=.2)
+
+
 
 #filtrado y obtencion de la fase envuelta
 Im_0_filt=np.fft.ifft2(np.fft.fftshift(gauss*np.fft.fftshift(np.fft.fft2(Im_0))))
@@ -147,6 +168,8 @@ plt.imshow(np.unwrap(fase_envu),cmap='gray')
 
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 Z=np.c_[integ.cumtrapz(np.unwrap(fase_envu)-np.mean(np.unwrap(fase_envu))),np.zeros(tam_raw)]
-surf = ax.plot_surface(X/63*10, Y/63*10, lamb/(4*np.pi)*Z, cmap=cm.coolwarm,
+surf = ax.plot_surface(X/63*1, Y/63*1, lamb/(4*np.pi)/(shift_obj/f_corr)*Z, cmap=cm.coolwarm,
                        linewidth=0, antialiased=False)
+axisEqual3D(ax)
+
 plt.show()
