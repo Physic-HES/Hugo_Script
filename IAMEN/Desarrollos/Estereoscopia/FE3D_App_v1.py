@@ -62,7 +62,7 @@ class CameraApp:
         self.scatter_canvas.get_tk_widget().pack()
 
         # Inicializar la configuracion de la camara
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(2)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
         w = 2560
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
