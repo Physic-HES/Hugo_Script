@@ -6,12 +6,13 @@ import time
 
 
 class Mesh:
-    def __init__(self,roi,step):
+    def __init__(self,roi,step,box):
         self.roi=[np.array(roi[0]),
                   np.array(roi[1]),
                   np.array(roi[2]),
                   np.array(roi[3])]
         self.step=step
+        self.box=box
         self.dot_x=range(self.roi[0][1], self.roi[3][1], self.step)
         self.dot_y=range(self.roi[0][0], self.roi[3][0], self.step)
         self.form=(len(self.dot_y),len(self.dot_x))
@@ -42,23 +43,20 @@ class Mesh:
                 self.im_y[k, u] = self.Def[h, 0]
                 self.im_xy[k, u] = np.sqrt(self.Def[h, 1]**2+self.Def[h, 0]**2)
                 h+=1
-        self.im_x = cv2.convertScaleAbs(self.im_x)
-        self.im_y = cv2.convertScaleAbs(self.im_y)
-        self.im_xy = cv2.convertScaleAbs(self.im_xy)
-        self.im_dx = cv2.convertScaleAbs(cv2.Sobel(self.im_x, cv2.CV_16S, 1, 0, ksize=3, scale=1, delta=0, borderType=cv2.BORDER_DEFAULT))
-        self.im_dy = cv2.convertScaleAbs(cv2.Sobel(self.im_y, cv2.CV_16S, 0, 1, ksize=3, scale=1, delta=0, borderType=cv2.BORDER_DEFAULT))
+        self.im_dx = cv2.Sobel(self.im_x, cv2.CV_16S, 1, 0, ksize=3, scale=1, delta=0, borderType=cv2.BORDER_DEFAULT)
+        self.im_dy = cv2.Sobel(self.im_y, cv2.CV_16S, 0, 1, ksize=3, scale=1, delta=0, borderType=cv2.BORDER_DEFAULT)
         self.im_dxy = cv2.add(self.im_dx,self.im_dy)
 
     def get_def(self,Im_old,Im_new):
         g=0
         for k in range(self.ptos_0.shape[0]):
-            Old_set = Im_old[int(self.ptos[k,0]-self.step):int(self.ptos[k,0]+self.step),
-                             int(self.ptos[k,1]-self.step):int(self.ptos[k,1]+self.step)]
-            New_set = Im_new[int(self.ptos[k,0]-self.step):int(self.ptos[k,0]+self.step),
-                             int(self.ptos[k,1]-self.step):int(self.ptos[k,1]+self.step)]
-            mask = Old_set[int(self.step/4):int(self.step*3/4),int(self.step/4):int(self.step*3/4)]
+            Old_set = Im_old[int(self.ptos[k,0]-self.box):int(self.ptos[k,0]+self.box),
+                             int(self.ptos[k,1]-self.box):int(self.ptos[k,1]+self.box)]
+            New_set = Im_new[int(self.ptos[k,0]-self.box):int(self.ptos[k,0]+self.box),
+                             int(self.ptos[k,1]-self.box):int(self.ptos[k,1]+self.box)]
+            mask = Old_set[int(self.box/4):int(self.box*3/4),int(self.box/4):int(self.box*3/4)]
             a,b,c,sub_int_def=cv2.minMaxLoc(cv2.matchTemplate(New_set,mask,cv2.TM_CCOEFF_NORMED))
-            vecc=np.array([int(sub_int_def[1]-self.step/4),int(sub_int_def[0]-self.step/4)])
+            vecc=np.array([int(sub_int_def[1]-self.box/4),int(sub_int_def[0]-self.box/4)])
             if np.linalg.norm(vecc)>0:
                 vec=vecc
             else:
@@ -74,17 +72,17 @@ class Mesh:
         lienso = np.zeros((Im.shape[0],Im.shape[1]))
         dim=(self.roi[3][1]-self.roi[2][1],self.roi[2][0]-self.roi[0][0])
         if type=='X':
-            rescale=cv2.resize(self.im_x,dim, interpolation =cv2.INTER_LINEAR)
+            rescale=cv2.resize(np.abs(self.im_x),dim, interpolation =cv2.INTER_LINEAR_EXACT)
         elif type=='Y':
-            rescale = cv2.resize(self.im_y,dim, interpolation =cv2.INTER_LINEAR)
+            rescale = cv2.resize(np.abs(self.im_y),dim, interpolation =cv2.INTER_LINEAR_EXACT)
         elif type=='XY':
-            rescale = cv2.resize(self.im_xy,dim, interpolation =cv2.INTER_LINEAR)
+            rescale = cv2.resize(np.abs(self.im_xy),dim, interpolation =cv2.INTER_LINEAR_EXACT)
         elif type=='dX':
-            rescale = cv2.resize(self.im_dx, dim, interpolation=cv2.INTER_LINEAR)
+            rescale = cv2.resize(np.abs(self.im_dx), dim, interpolation=cv2.INTER_LINEAR_EXACT)
         elif type == 'dY':
-            rescale = cv2.resize(self.im_dy, dim, interpolation=cv2.INTER_LINEAR)
+            rescale = cv2.resize(np.abs(self.im_dy), dim, interpolation=cv2.INTER_LINEAR_EXACT)
         elif type == 'dXY':
-            rescale = cv2.resize(self.im_dxy, dim, interpolation=cv2.INTER_LINEAR)
+            rescale = cv2.resize(np.abs(self.im_dxy), dim, interpolation=cv2.INTER_LINEAR_EXACT)
         lienso[self.roi[0][0]:self.roi[3][0],self.roi[0][1]:self.roi[3][1]]=rescale
         gridx,gridy=np.mgrid[0:lienso.shape[0]-1:lienso.shape[0]*1j,0:lienso.shape[1]-1:lienso.shape[1]*1j]
         gridz=(griddata(self.ptos,self.ptos_0,(gridx,gridy),method='linear')).astype('float32')
@@ -106,24 +104,27 @@ cam.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
 cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
 cam.set(cv2.CAP_PROP_EXPOSURE,-1)
 rval,frame0=cam.read()
+frame=np.zeros(frame0.shape)
 frame0_BW=cv2.cvtColor(frame0,cv2.COLOR_BGR2GRAY)
-(thresh, frame0) = cv2.threshold(frame0_BW, 6, 55, cv2.THRESH_BINARY)
-margen=230
-roi=[[margen+50,margen],[margen+50,frame0.shape[1]-margen],[frame0.shape[0]-margen+50,margen],[frame0.shape[0]-margen+50,frame0.shape[1]-margen]]
-step=162
-mesh=Mesh(roi,step)
-print(mesh.ptos.shape)
+lowlim=80
+(thresh, frame0_BW) = cv2.threshold(frame0_BW, lowlim, 255, cv2.THRESH_BINARY)
+margen=270
+roi=[[margen+50,margen+50],[margen+50,frame0.shape[1]-margen-50],[frame0.shape[0]-margen+50,margen+50],[frame0.shape[0]-margen+50,frame0.shape[1]-margen-50]]
+step=32
+box=80
+mesh=Mesh(roi,step,box)
+print(f'Cantidad de puntos de seguimiento: {mesh.ptos.shape[0]}')
 while rval:
     rval,frame=cam.read()
     frame_BW = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    (thresh, frame_BW) = cv2.threshold(frame_BW, 6, 55, cv2.THRESH_BINARY)
-    mesh.get_def(np.max(frame0_BW)-frame0_BW,np.max(frame_BW)-frame_BW)
-    im_def_BW=(mesh.get_lienso(frame_BW,'XY')).astype('uint8')
+    (thresh, frame_BW) = cv2.threshold(frame_BW, lowlim, 255, cv2.THRESH_BINARY)
+    mesh.get_def(frame0_BW,frame_BW)
+    im_def_BW=(mesh.get_lienso(frame_BW,'XY')*2).astype('uint8')
     im_def=cv2.cvtColor(im_def_BW,cv2.COLOR_GRAY2BGR)
-    im_def_cmap=cv2.applyColorMap(im_def, cv2.COLORMAP_HOT)
-    frame2=cv2.add(frame,im_def_cmap)
+    im_def_cmap=cv2.applyColorMap(im_def, cv2.COLORMAP_TURBO)
+    frame2=cv2.addWeighted(frame,0.5,im_def_cmap,0.5,0.0)
     for j in range(mesh.ptos.shape[0]):
-        cv2.circle(frame2,(mesh.ptos[j,1],mesh.ptos[j,0]),4,(0,255,0),-1)
+        cv2.circle(frame2,(mesh.ptos[j,1],mesh.ptos[j,0]),2,(0,0,0),-1)
     cv2.imshow('def',rescale_frame(frame2,50))
     frame0_BW=frame_BW
     if cv2.waitKey(10) == 's':
