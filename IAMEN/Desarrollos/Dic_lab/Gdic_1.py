@@ -72,17 +72,17 @@ class Mesh:
         lienso = np.zeros((Im.shape[0],Im.shape[1]))
         dim=(self.roi[3][1]-self.roi[2][1],self.roi[2][0]-self.roi[0][0])
         if type=='X':
-            rescale=cv2.resize(np.abs(self.im_x),dim, interpolation =cv2.INTER_LINEAR_EXACT)
+            rescale=cv2.resize(np.abs(self.im_x),dim, interpolation =cv2.INTER_CUBIC)
         elif type=='Y':
-            rescale = cv2.resize(np.abs(self.im_y),dim, interpolation =cv2.INTER_LINEAR_EXACT)
+            rescale = cv2.resize(np.abs(self.im_y),dim, interpolation =cv2.INTER_CUBIC)
         elif type=='XY':
-            rescale = cv2.resize(np.abs(self.im_xy),dim, interpolation =cv2.INTER_LINEAR_EXACT)
+            rescale = cv2.resize(np.abs(self.im_xy),dim, interpolation =cv2.INTER_CUBIC)
         elif type=='dX':
-            rescale = cv2.resize(np.abs(self.im_dx), dim, interpolation=cv2.INTER_LINEAR_EXACT)
+            rescale = cv2.resize(np.abs(self.im_dx), dim, interpolation=cv2.INTER_CUBIC)
         elif type == 'dY':
-            rescale = cv2.resize(np.abs(self.im_dy), dim, interpolation=cv2.INTER_LINEAR_EXACT)
+            rescale = cv2.resize(np.abs(self.im_dy), dim, interpolation=cv2.INTER_CUBIC)
         elif type == 'dXY':
-            rescale = cv2.resize(np.abs(self.im_dxy), dim, interpolation=cv2.INTER_LINEAR_EXACT)
+            rescale = cv2.resize(np.abs(self.im_dxy), dim, interpolation=cv2.INTER_CUBIC)
         lienso[self.roi[0][0]:self.roi[3][0],self.roi[0][1]:self.roi[3][1]]=rescale
         gridx,gridy=np.mgrid[0:lienso.shape[0]-1:lienso.shape[0]*1j,0:lienso.shape[1]-1:lienso.shape[1]*1j]
         gridz=(griddata(self.ptos,self.ptos_0,(gridx,gridy),method='linear')).astype('float32')
@@ -98,7 +98,7 @@ def rescale_frame(frame, percent=75):
 
 
 #plt.ion()
-cam=cv2.VideoCapture(2)
+cam=cv2.VideoCapture(0)
 cam.set(cv2.CAP_PROP_AUTO_EXPOSURE,1)
 cam.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
 cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
@@ -106,20 +106,21 @@ cam.set(cv2.CAP_PROP_EXPOSURE,-1)
 rval,frame0=cam.read()
 frame=np.zeros(frame0.shape)
 frame0_BW=cv2.cvtColor(frame0,cv2.COLOR_BGR2GRAY)
-lowlim=80
-(thresh, frame0_BW) = cv2.threshold(frame0_BW, lowlim, 255, cv2.THRESH_BINARY)
-margen=270
-roi=[[margen+50,margen+50],[margen+50,frame0.shape[1]-margen-50],[frame0.shape[0]-margen+50,margen+50],[frame0.shape[0]-margen+50,frame0.shape[1]-margen-50]]
+lowlim=100
+uplim=255
+(thresh, frame0_BW) = cv2.threshold(frame0_BW, lowlim, uplim, cv2.THRESH_BINARY)
+margen=600
+roi=[[int(margen/2),margen],[int(margen/2),frame0.shape[1]-margen],[frame0.shape[0]-int(margen/2),margen],[frame0.shape[0]-int(margen/2),frame0.shape[1]-margen]]
 step=32
-box=80
+box=120
 mesh=Mesh(roi,step,box)
 print(f'Cantidad de puntos de seguimiento: {mesh.ptos.shape[0]}')
 while rval:
     rval,frame=cam.read()
     frame_BW = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    (thresh, frame_BW) = cv2.threshold(frame_BW, lowlim, 255, cv2.THRESH_BINARY)
+    (thresh, frame_BW) = cv2.threshold(frame_BW, lowlim, uplim, cv2.THRESH_BINARY)
     mesh.get_def(frame0_BW,frame_BW)
-    im_def_BW=(mesh.get_lienso(frame_BW,'XY')*2).astype('uint8')
+    im_def_BW=(mesh.get_lienso(frame_BW,'XY')*5).astype('uint8')
     im_def=cv2.cvtColor(im_def_BW,cv2.COLOR_GRAY2BGR)
     im_def_cmap=cv2.applyColorMap(im_def, cv2.COLORMAP_TURBO)
     frame2=cv2.addWeighted(frame,0.5,im_def_cmap,0.5,0.0)
