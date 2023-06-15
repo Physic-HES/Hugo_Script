@@ -4,8 +4,11 @@ from tkinter import ttk
 import cv2
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+import matplotlib.style as mplstyle
+mplstyle.use('fast')
 from PIL import Image, ImageTk
 import numpy as np
+from multiprocessing import Process
 
 
 class CameraApp:
@@ -73,45 +76,52 @@ class CameraApp:
         # Inicializar la captura de la cámara
         self.update_camera()
 
+
+    def detection(self,frame):
+        global image2, im1, im2
+        # Deteccion de puntos
+        for k in range(2):
+            red_image = frame[:, int(k * w / 2):int((k + 1) * w / 2), 2]
+            (thresh, binaryIM) = cv2.threshold(red_image, int(umbral * np.max(red_image)), 255, cv2.THRESH_BINARY)
+            output = cv2.connectedComponentsWithStats(binaryIM, 3, cv2.CV_32S)
+            (numLabels, labels, stats, centroids) = output
+            image = frame[:, int(k * w / 2):int((k + 1) * w / 2), :].copy()
+            X1 = np.array(np.zeros((2, 1)))
+            for i in range(1, numLabels):
+                if stats[i, cv2.CC_STAT_AREA] >= int(0.75 * np.mean(stats[1:, cv2.CC_STAT_AREA])):
+                    (cX, cY) = centroids[i]
+                    #cv2.circle(image, (int(cX*.2), int(cY*.2)), 1, (0, 255, 0), -1)
+                    cv2.rectangle(image, (int(cX - 15), int(cY - 15)), (int(cX + 15), int(cY + 15)), (0, 255, 0), 2)
+                    if X1.shape == (2, 1):
+                        X1 = np.array([cX, cY])
+                    else:
+                        X1 = np.c_[X1, np.array([cX, cY])]
+            if k == 0:
+                im1 = X1.T.copy()
+                im1 = self.ordenar(im1)
+                imageL = image
+            elif k == 1:
+                im2 = X1.T.copy()
+                im2 = self.ordenar(im2)
+                imageR = image
+        return cv2.hconcat([imageL, imageR]), im1, im2
+
     def update_camera(self):
         global im1, im2, ptos
         # Capturar un fotograma de la cámara
         self.cap.set(cv2.CAP_PROP_EXPOSURE, int(exp))
         ret, frame = self.cap.read()
+        tiempo=time.time()
 
         if ret:
-            # Convertir la imagen de BGR a RGB
-            frame_rgb = cv2.cvtColor(self.rescale_frame(frame,25), cv2.COLOR_BGR2RGB)
-
-            # Deteccion de puntos
-            for k in range(2):
-                red_image = frame[:, int(k * w / 2):int((k + 1) * w / 2), 2]
-                (thresh, binaryIM) = cv2.threshold(red_image, int(umbral * np.max(red_image)), 255, cv2.THRESH_BINARY)
-                output = cv2.connectedComponentsWithStats(binaryIM, 3, cv2.CV_32S)
-                (numLabels, labels, stats, centroids) = output
-                image = frame[:, int(k * w / 2):int((k + 1) * w / 2), :].copy()
-                X1 = np.array(np.zeros((2, 1)))
-                for i in range(1, numLabels):
-                    if stats[i, cv2.CC_STAT_AREA] >= int(0.75 * np.mean(stats[1:, cv2.CC_STAT_AREA])):
-                        (cX, cY) = centroids[i]
-                        cv2.circle(image, (int(cX), int(cY)), 2, (0, 255, 0), -1)
-                        cv2.rectangle(image, (int(cX - 10), int(cY - 10)), (int(cX + 10), int(cY + 10)), (0, 255, 0), 2)
-                        if X1.shape == (2, 1):
-                            X1 = np.array([cX, cY])
-                        else:
-                            X1 = np.c_[X1, np.array([cX, cY])]
-                if k == 0:
-                    im1 = X1.T.copy()
-                    im1 = self.ordenar(im1)
-                    imageL=image
-                elif k == 1:
-                    im2 = X1.T.copy()
-                    im2 = self.ordenar(im2)
-                    imageR=image
-            image2 = cv2.hconcat([imageL, imageR])
+            # Instanciacion de la deteccion
+            image2, im1, im2 = self.detection(frame)
+            #Pr = Process(target=self.detection,args=(frame))
+            #Pr.start()
+            #Pr.join()
 
             # Mostrar la imagen en la etiqueta de la cámara
-            image2_=cv2.cvtColor(self.rescale_frame(image2, 20),cv2.COLOR_BGR2RGB)
+            image2_=cv2.cvtColor(self.rescale_frame(image2,25),cv2.COLOR_BGR2RGB)
             # Redimensionar la imagen para ajustarse al marco
             image = Image.fromarray(image2_)
             photo = ImageTk.PhotoImage(image=image)
@@ -122,8 +132,8 @@ class CameraApp:
         # Realizar la iteración del scatter 3D
         if im1.shape[0] == im2.shape[0]:
             self.scatter_ax.cla()
-            ptos = self.dots(im1, im2, 60, 4.3, int(w / 2), h) # Datos aleatorios para el scatter 3D
-            self.scatter_ax.scatter(ptos[:, 0], ptos[:, 1], ptos[:, 2])
+            ptos = self.dots(im1, im2, 60, 4.3, int(w / 2), h) # Obtencion de nube de puntos
+            self.scatter_ax.scatter(ptos[:, 0], ptos[:, 1], ptos[:, 2],marker='.',color='r')
             self.scatter_ax.set_xlim([np.min(ptos[:, 0]) - 10, np.max(ptos[:, 0]) + 10])
             self.scatter_ax.set_ylim([150, 250])
             self.scatter_ax.set_zlim([np.min(ptos[:, 2]) - 10, np.max(ptos[:, 2]) + 10])
@@ -134,8 +144,9 @@ class CameraApp:
             self.axisEqual3D(self.scatter_ax)
             self.scatter_canvas.draw()
 
+        print(f'Sample Rate {1/(time.time()-tiempo):.3} Hz')
         # Llamar a esta función de nuevo después de 10 milisegundos
-        self.root.after(10, self.update_camera)
+        self.root.after(2, self.update_camera)
 
     def porcent(self,value):
         global umbral

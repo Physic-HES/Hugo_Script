@@ -72,17 +72,17 @@ class Mesh:
         lienso = np.zeros((Im.shape[0],Im.shape[1]))
         dim=(self.roi[3][1]-self.roi[2][1],self.roi[2][0]-self.roi[0][0])
         if type=='X':
-            rescale=cv2.resize(np.abs(self.im_x),dim, interpolation =cv2.INTER_CUBIC)
+            rescale=cv2.resize(cv2.convertScaleAbs(self.im_x),dim, interpolation =cv2.INTER_CUBIC)
         elif type=='Y':
-            rescale = cv2.resize(np.abs(self.im_y),dim, interpolation =cv2.INTER_CUBIC)
+            rescale = cv2.resize(cv2.convertScaleAbs(self.im_y),dim, interpolation =cv2.INTER_CUBIC)
         elif type=='XY':
-            rescale = cv2.resize(np.abs(self.im_xy),dim, interpolation =cv2.INTER_CUBIC)
+            rescale = cv2.resize(cv2.convertScaleAbs(self.im_xy),dim, interpolation =cv2.INTER_CUBIC)
         elif type=='dX':
-            rescale = cv2.resize(np.abs(self.im_dx), dim, interpolation=cv2.INTER_CUBIC)
+            rescale = cv2.resize(cv2.convertScaleAbs(self.im_dx), dim, interpolation=cv2.INTER_CUBIC)
         elif type == 'dY':
-            rescale = cv2.resize(np.abs(self.im_dy), dim, interpolation=cv2.INTER_CUBIC)
+            rescale = cv2.resize(cv2.convertScaleAbs(self.im_dy), dim, interpolation=cv2.INTER_CUBIC)
         elif type == 'dXY':
-            rescale = cv2.resize(np.abs(self.im_dxy), dim, interpolation=cv2.INTER_CUBIC)
+            rescale = cv2.resize(cv2.convertScaleAbs(self.im_dxy), dim, interpolation=cv2.INTER_CUBIC)
         lienso[self.roi[0][0]:self.roi[3][0],self.roi[0][1]:self.roi[3][1]]=rescale
         gridx,gridy=np.mgrid[0:lienso.shape[0]-1:lienso.shape[0]*1j,0:lienso.shape[1]-1:lienso.shape[1]*1j]
         gridz=(griddata(self.ptos,self.ptos_0,(gridx,gridy),method='linear')).astype('float32')
