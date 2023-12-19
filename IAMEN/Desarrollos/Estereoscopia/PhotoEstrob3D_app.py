@@ -67,7 +67,7 @@ def dots(X1,X2,d,f,w,h):
 
 def get_ims():
     global X1, X2
-    cam = cv2.VideoCapture(0)
+    cam = cv2.VideoCapture(2)
     cam.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
     w = 2560
     cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
@@ -75,9 +75,9 @@ def get_ims():
     cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
     cam.set(cv2.CAP_PROP_EXPOSURE, int(exp))
     rval, frame = cam.read()
-    cv2.imshow(f'Modo Automatico de deteccion', frame)
-    cv2.destroyAllWindows()
-    time.sleep(0.01)
+    #cv2.imshow(f'Modo Automatico de deteccion', frame)
+    #cv2.destroyAllWindows()
+    #time.sleep(0.01)
     fig1 = Figure()
     ax1 = fig1.add_subplot(projection='3d')
     #fig2 = Figure()
@@ -126,7 +126,7 @@ def get_ims():
             cloud._offsets3d = (ptos[:,0],ptos[:,1],ptos[:,2])
             #canvas1.draw()
             #canvas2.draw()
-            time.sleep(0.001)
+            time.sleep(0.00001)
             ax1.clear()
             #ax2.clear()
             print(f'Dimention Ok at {1/(time.time()-step):3.3} Hz of Sample Rate')

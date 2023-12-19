@@ -14,7 +14,7 @@ import scipy.signal as S
 
 class CameraApp:
     def __init__(self, root):
-        global w, h
+        global w, h, kk
         self.root = root
         self.root.title("Fotogrametria 3D mediante estereo visión")
 
@@ -72,10 +72,18 @@ class CameraApp:
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
         h = 960
         #self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, -1)
-        self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
+        #self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
         self.cap.set(cv2.CAP_PROP_EXPOSURE, int(exp))
 
+        #Estado del Trigger
+        myrecording = sd.rec(int(2 * 1000), samplerate=1000, channels=1, dtype='float64')
+        time.sleep(2)
+        f, Spec = S.welch(myrecording[:, 0], 1000, window='hann', nperseg=750,
+                          scaling='spectrum')
+        self.fq = f[np.argmax(Spec)]
+
         # Inicializar la captura de la cámara
+        kk=0
         self.update_camera()
 
 
@@ -90,19 +98,9 @@ class CameraApp:
             output = cv2.connectedComponentsWithStats(binaryIM, 3, cv2.CV_32S)
             (numLabels, labels, stats, centroids) = output
             image = frame[:, int(k * w / 2):int((k + 1) * w / 2), :].copy()
-            #X1 = np.array(np.zeros((2, 1)))
             centroids_array=np.array(centroids)
             interes=np.where(np.array(stats[1:, cv2.CC_STAT_AREA])>=int(0.55*np.mean(np.array(stats[1:, cv2.CC_STAT_AREA]))))
             X1=centroids_array[interes[0]+1,:]
-            #for i in range(1, numLabels):
-            #    if stats[i, cv2.CC_STAT_AREA] >= int(0.75 * np.mean(stats[1:, cv2.CC_STAT_AREA])):
-            #        (cX, cY) = centroids[i]
-            #        #cv2.circle(image, (int(cX*.2), int(cY*.2)), 1, (0, 255, 0), -1)
-            #        #cv2.rectangle(image, (int(cX - 15), int(cY - 15)), (int(cX + 15), int(cY + 15)), (0, 255, 0), 2)
-            #        if X1.shape == (2, 1):
-            #            X1 = np.array([cX, cY])
-            #        else:
-            #            X1 = np.c_[X1, np.array([cX, cY])]
             if k == 0:
                 im1 = X1.copy()
                 im1 = self.ordenar(im1)
@@ -111,24 +109,27 @@ class CameraApp:
                 im2 = X1.copy()
                 im2 = self.ordenar(im2)
                 imageR = cv2.add(image,ceros)
-        #print(im1.shape)
-        #print(im2.shape)
         return cv2.hconcat([imageL, imageR]), im1, im2
 
     def update_camera(self):
-        global im1, im2, ptos
+        global im1, im2, ptos, t, kk
         # Capturar un fotograma de la cámara
-        self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
-        self.cap.set(cv2.CAP_PROP_EXPOSURE, int(exp))
+        numLabels = 0
+        while numLabels < 77 and kk==0:
+            ret, frame = self.cap.read()
+            (thresh, binaryIM) = cv2.threshold(frame[:, :int(frame.shape[1] / 2), 2], int(0.85 * 255), 255,
+                                               cv2.THRESH_BINARY)
+            (numLabels, labels, stats, centroids) = cv2.connectedComponentsWithStats(binaryIM, 3, cv2.CV_32S)
+        if kk==0:
+            t = time.time()
+        time.sleep(22 / self.fq - (time.time() - t))
+        print(f'Captura a {1 / (time.time() - t):.4} Hz y Estroboscopica a {self.fq:.4} Hz')
         ret, frame = self.cap.read()
-        tiempo=time.time()
+        t=time.time()
 
         if ret:
             # Instanciacion de la deteccion
             image2, im1, im2 = self.detection(frame)
-            #Pr = Process(target=self.detection,args=(frame))
-            #Pr.start()
-            #Pr.join()
 
             # Mostrar la imagen en la etiqueta de la cámara
             image2_=cv2.cvtColor(self.rescale_frame(image2,25),cv2.COLOR_BGR2RGB)
@@ -138,11 +139,10 @@ class CameraApp:
             self.camera_label.config(image=photo)
             self.camera_label.image = photo
 
-
         # Realizar la iteración del scatter 3D
         if im1.shape[0] == im2.shape[0]:
             self.scatter_ax.cla()
-            ptos = self.dots(im1, im2, 60, 3.75, int(w / 2), h) # Obtencion de nube de puntos
+            ptos = self.dots(im1, im2, 60, 4.3, int(w / 2), h) # Obtencion de nube de puntos
             self.scatter_ax.scatter(ptos[:, 0], ptos[:, 1], ptos[:, 2],marker='.',color='r')
             self.scatter_ax.set_xlim([np.min(ptos[:, 0]) - 10, np.max(ptos[:, 0]) + 10])
             self.scatter_ax.set_ylim([150, 250])
@@ -154,8 +154,7 @@ class CameraApp:
             self.axisEqual3D(self.scatter_ax)
             self.scatter_canvas.draw()
 
-        time.sleep(1/24)
-        print(f'Sample Rate {1/(time.time()-tiempo):.3} Hz')
+        kk+=1
         # Llamar a esta función de nuevo después de 1 milisegundos
         self.root.after(1, self.update_camera)
 

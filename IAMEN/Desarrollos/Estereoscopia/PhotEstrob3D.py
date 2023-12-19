@@ -60,7 +60,7 @@ def plot_ptos(ptos):
 def get_ims():
     plt.ion()
     global X1, X2
-    cam = cv2.VideoCapture(0)
+    cam = cv2.VideoCapture(2)
     cam.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
     w=2560
     cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
