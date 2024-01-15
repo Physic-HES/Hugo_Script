@@ -4,12 +4,26 @@ import numpy as np
 from tqdm import tqdm
 from scipy import integrate as integ
 import scipy.ndimage
+import meshio
+import scipy.interpolate as Sc
 
-def sin_cos(fase_envu):
+def importFEM(filename,H,W):
+    mesh=meshio.read(filename)
+    data=mesh.points+mesh.point_data['Displacement']
+    data=data[data[:,2]>36.95,:]
+    X,Y=np.meshgrid(np.linspace(np.min(data[:,0])+np.min(data[:,0])*0.03,np.max(data[:,0])-np.max(data[:,0])*0.03,W),
+                    np.linspace(np.min(data[:,1])+np.min(data[:,1])*0.03,np.max(data[:,1])-np.max(data[:,1])*0.03,H),indexing='ij')
+    points=np.zeros((len(data[:,2]),2))
+    points[:,0]=data[:,0]
+    points[:,1]=data[:,1]
+    return Sc.griddata(points,data[:,2],(X,Y),method='nearest')
+
+
+def sin_cos(fase_envu,ite):
     #filtro para fase envuelta
     w=1/105*np.ones((7,7))
     it=0
-    itera=30
+    itera=ite
     pbar = tqdm(total=itera, desc='Filtrando fase envuelta...')
     while it<itera:
         sin_=np.sin(fase_envu)
@@ -32,6 +46,11 @@ def axisEqual3D(ax):
         getattr(ax, 'set_{}lim'.format(dim))(ctr - r, ctr + r)
 
 
+def gauss_def(X,Y,amp,p,s,ratio,angle):
+    x,y=np.cos(angle)*(X-p[0])-np.sin(angle)*(Y-p[1])+p[0], np.sin(angle)*(X-p[0])+np.cos(angle)*(Y-p[1])+p[1]
+    D=amp*np.exp(-(ratio[0]*(x-p[0])**2+ratio[1]*(y-p[1])**2)/(2*s**2))
+    return D
+
 # Parametros de la Camara
 W,H=1248,960 # Ancho y Alto de la Imagen en pixeles
 m=0.014 # Magnificacion de la camara
@@ -41,7 +60,7 @@ mu= 3.6 # Tamaño de pixel
 d= 4 # Distancia de espejos al Bean Splitter en cm
 D= (36+d*4)*1E4 # Distancia total al Objeto en micrones
 Grano=5 # Tamaño de grano en pixeles para Imax/8 como umbral
-tilt= 1.11 # angulo de giro del espejo en DEG
+tilt= 0.75 # angulo de giro del espejo en DEG
 alpha=2*tilt*np.pi/180 # Angulo de shear en radianes
 
 # Introduccion de Deformacion y calculo de shear
@@ -49,7 +68,10 @@ X,Y=np.meshgrid(range(W),range(H)) # Matrices X e Y de Pixeles
 Fas=2*np.pi*np.random.random(X.shape) # Fasores Aleatorios
 c=333/Grano # Apertura de filtro Pupila en pixeles
 P=np.exp(-1/(2*c**2)*((X-W/2)**2+(Y-H/2)**2)) # Filtro Pupila
-Phi=5*np.exp(-1/(2*(H/5)**2)*((X-W/2)**2+(Y-H/2)**2)) # Deformacion 1
+#Phi=5*np.exp(-1/(2*(H/5)**2)*((X-W/2)**2+(Y-H/2)**2)) # Deformacion 1
+#Phi=gauss_def(X,Y,1,[W/4,3*H/5],H/12,[1,1],0)+gauss_def(X,Y,2,[3*W/5,H/3],H/12,[1,0.5],np.pi/4)+gauss_def(X,Y,-1.3,[4*W/5,3*H/4],H/12,[1,0.5],-np.pi/4)+1E-4*X
+Phi=importFEM('/home/hp1opticaiamend/Desktop/deslaminado-CCX_Results.vtk',1248,960)
+Phi=(Phi-np.min(Phi))
 Speak=np.fft.ifft2(P*np.fft.fft2(Fas)) # Generacion de Speckle By Goodman
 print(f'Angulo de shear: {alpha*180/np.pi/2} DEG') # Print Angulo de Shear en Grados
 S=-int(np.tan(alpha)*D*m/mu) # Shear en Pixeles con direccion
@@ -94,7 +116,7 @@ plt.figure()
 plt.imshow(fase_envu0,cmap='gray')
 #Plot de la fase envuelta filtrada
 plt.figure()
-fase_envu1=sin_cos(fase_envu0)
+fase_envu1=sin_cos(fase_envu0,50)
 plt.imshow(fase_envu1,cmap='gray')
 
 # Desenvolvimiento e Integracion
@@ -102,13 +124,13 @@ plt.figure()
 plt.imshow(np.unwrap(fase_envu1),cmap='gray')
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 Z=np.c_[integ.cumtrapz(np.unwrap(fase_envu1)-np.mean(np.unwrap(fase_envu1))),np.zeros(H)]
-surf = ax.plot_surface(X, Y, lamb/(2*np.pi*np.abs(S))*Z, cmap=cm.coolwarm,
+surf = ax.plot_surface(Y, X, lamb/(2*np.pi*np.abs(S))*Z, cmap=cm.coolwarm,
                        linewidth=0, antialiased=False)
 
 fig2, ax2 = plt.subplots(subplot_kw={"projection": "3d"})
-surf3 = ax2.plot_surface(X, Y, Phi, cmap=cm.Blues,
+surf3 = ax2.plot_surface(Y, X, Phi, cmap=cm.Blues,
                        linewidth=0, antialiased=False, alpha=0.25)
-surf2 = ax2.plot_surface(X, Y, lamb/(2*np.pi*np.abs(S))*Z, cmap=cm.coolwarm,
+surf2 = ax2.plot_surface(Y, X, lamb/(2*np.pi*np.abs(S))*Z, cmap=cm.coolwarm,
                        linewidth=0, antialiased=False, alpha=0.75)
 
 #axisEqual3D(ax)
