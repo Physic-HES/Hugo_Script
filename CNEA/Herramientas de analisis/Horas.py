@@ -1,5 +1,6 @@
 import datetime
 import numpy as np
+import pandas as pd
 
 class horario:
     def __init__(self):
@@ -7,36 +8,82 @@ class horario:
         self.fichados=0
         self.resto=0
         self.hoy=datetime.datetime.now()
-        self.tabla=[]
+        self.tabla=pd.DataFrame({'Dia':[],'Entrada':[],'Salida':[],'Saldo':[],'Resto':[]})
+        self.dias=[]
 
     def fichado(self,d,E,S):
+        self.dias.append(d)
         Ent=datetime.datetime.replace(self.hoy,day=d,hour=E[0],minute=E[1])
         self.fichados += 1
         if len(S)>1:
             Sal=datetime.datetime.replace(self.hoy,day=d,hour=S[0],minute=S[1])
             self.acum+=Sal-Ent
             self.rest()
-            self.tabla.append([Ent,Sal])
+            if self.resto<0:
+                row=pd.DataFrame({'Dia': [f'{d:02.0f}'],
+                                   'Entrada': [f'{E[0]:02.0f}:{E[1]:02.0f}'],
+                                   'Salida': [f'{S[0]:02.0f}:{S[1]:02.0f}'],
+                                   'Saldo': ['-'],
+                                   'Resto': [f'{np.abs(int(self.resto / 60 / 60)):02.0f}:{np.abs((self.resto / 60 / 60 - int(self.resto / 60 / 60)) * 60):02.0f}']})
+                self.tabla=pd.concat([self.tabla,row], ignore_index=True)
+            else:
+                row=pd.DataFrame({'Dia': [f'{d:02.0f}'],
+                                   'Entrada': [f'{E[0]:02.0f}:{E[1]:02.0f}'],
+                                   'Salida': [f'{S[0]:02.0f}:{S[1]:02.0f}'],
+                                   'Saldo': ['+'],
+                                   'Resto': [f'{int(self.resto / 60 / 60):02.0f}:{(self.resto / 60 / 60 - int(self.resto / 60 / 60)) * 60:02.0f}']})
+                self.tabla=pd.concat([self.tabla,row], ignore_index=True)
         else:
             self.acum += self.hoy - Ent
             self.rest()
-            self.tabla.append([Ent, self.hoy])
             salida = self.hoy - datetime.timedelta(seconds=self.resto)
             if self.resto<0:
-                print(f'Deberias salir a las {salida.hour}:{salida.minute} hs')
+                print(f'----->  Deberías salir a las {salida.hour:02.0f}:{salida.minute:02.0f} hs')
+                row=pd.DataFrame({'Dia': [f'{d:02.0f}'],
+                                   'Entrada': [f'{E[0]:02.0f}:{E[1]:02.0f}'],
+                                   'Salida': ['  :  '],
+                                   'Saldo': ['-'],
+                                   'Resto': [f'{np.abs(int(self.resto / 60 / 60)):02.0f}:{np.abs((self.resto / 60 / 60 - int(self.resto / 60 / 60)) * 60):02.0f}']})
+                self.tabla=pd.concat([self.tabla,row], ignore_index=True)
             else:
-                print(f'Deberias haber salido a las {salida.hour}:{salida.minute} hs')
+                print(f'----->  Deberías haber salido a las {salida.hour:02.0f}:{salida.minute:02.0f} hs')
+                row=pd.DataFrame({'Dia': [f'{d:02.0f}'],
+                                   'Entrada': [f'{E[0]:02.0f}:{E[1]:02.0f}'],
+                                   'Salida': ['  :  '],
+                                   'Saldo': ['+'],
+                                   'Resto': [f'{int(self.resto / 60 / 60):02.0f}:{(self.resto / 60 / 60 - int(self.resto / 60 / 60)) * 60:02.0f}']})
+                self.tabla=pd.concat([self.tabla,row], ignore_index=True)
 
     def rest(self):
-        self.resto = self.acum.seconds - datetime.timedelta(hours=self.fichados * 8).seconds
-        if self.resto>0:
-            print(f'Tenes a favor {int(self.resto/60/60):02.0f} hs y '
-                  f'{(self.resto/60/60-int(self.resto/60/60))*60:02.0f} min')
+        self.acum += datetime.datetime.now() - self.hoy
+        self.hoy = datetime.datetime.now()
+        self.resto = self.acum.total_seconds() - datetime.timedelta(hours=self.fichados * 8 ).total_seconds()
         if self.resto<0:
-            print(f'Te faltan {np.abs(int(self.resto/60/60)):02.0f} hs y '
+            print(f'El día {self.dias[-1]:02.0f} te faltan {np.abs(int(self.resto/60/60)):02.0f} hs y '
                   f'{np.abs((self.resto/60/60-int(self.resto/60/60))*60):02.0f} min')
+        else:
+            print(f'El día {self.dias[-1]:02.0f} tenés a favor {int(self.resto/60/60):02.0f} hs y '
+                  f'{(self.resto/60/60-int(self.resto/60/60))*60:02.0f} min')
 
     def faltan(self):
         self.acum += datetime.datetime.now()-self.hoy
         self.hoy=datetime.datetime.now()
         self.rest()
+
+    def planilla(self):
+        print('PLANILLA HORARIA - CAC ',self.hoy.strftime("%B %Y"))
+        print(self.tabla)
+        print(' ')
+
+
+def balance():
+    sem=horario()
+    print(' ')
+    print(':::::: BALANCE HORARIO DE LA SEMANA :::::::')
+    sem.fichado(15,[7,27],[15,44])
+    sem.fichado(16,[10,47],[18,36])
+    sem.fichado(17,[7,1],[15,11])
+    #sem.fichado(18,[7,27],[15,44])
+    sem.fichado(18,[8,7],[0])
+    print(' ')
+    sem.planilla()
