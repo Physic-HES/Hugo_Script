@@ -59,7 +59,7 @@ mu= 3.6 # Tamaño de pixel
 # Parametros del Interferometro
 d= 4 # Distancia de espejos al Bean Splitter en cm
 D= (36+d*4)*1E4 # Distancia total al Objeto en micrones
-Grano=5 # Tamaño de grano en pixeles para Imax/8 como umbral
+Grano=8 # Tamaño de grano en pixeles para Imax/8 como umbral
 tilt= 0.75 # angulo de giro del espejo en DEG
 alpha=2*tilt*np.pi/180 # Angulo de shear en radianes
 
@@ -69,9 +69,9 @@ Fas=2*np.pi*np.random.random(X.shape) # Fasores Aleatorios
 c=333/Grano # Apertura de filtro Pupila en pixeles
 P=np.exp(-1/(2*c**2)*((X-W/2)**2+(Y-H/2)**2)) # Filtro Pupila
 #Phi=5*np.exp(-1/(2*(H/5)**2)*((X-W/2)**2+(Y-H/2)**2)) # Deformacion 1
-#Phi=gauss_def(X,Y,1,[W/4,3*H/5],H/12,[1,1],0)+gauss_def(X,Y,2,[3*W/5,H/3],H/12,[1,0.5],np.pi/4)+gauss_def(X,Y,-1.3,[4*W/5,3*H/4],H/12,[1,0.5],-np.pi/4)+1E-4*X
-Phi=importFEM('/home/hp1opticaiamend/Desktop/deslaminado-CCX_Results.vtk',1248,960)
-Phi=(Phi-np.min(Phi))
+Phi=gauss_def(X,Y,1,[W/4,3*H/5],H/12,[1,1],0)+gauss_def(X,Y,2,[3*W/5,H/3],H/12,[1,0.5],np.pi/4)+gauss_def(X,Y,-1.3,[4*W/5,3*H/4],H/12,[1,0.5],-np.pi/4)+(W-X)*5E-4
+#Phi=importFEM('/home/hp1opticaiamend/Desktop/deslaminado-CCX_Results.vtk',1248,960)
+#Phi=(Phi-np.min(Phi))
 Speak=np.fft.ifft2(P*np.fft.fft2(Fas)) # Generacion de Speckle By Goodman
 print(f'Angulo de shear: {alpha*180/np.pi/2} DEG') # Print Angulo de Shear en Grados
 S=-int(np.tan(alpha)*D*m/mu) # Shear en Pixeles con direccion
@@ -116,7 +116,7 @@ plt.figure()
 plt.imshow(fase_envu0,cmap='gray')
 #Plot de la fase envuelta filtrada
 plt.figure()
-fase_envu1=sin_cos(fase_envu0,50)
+fase_envu1=sin_cos(fase_envu0,80)
 plt.imshow(fase_envu1,cmap='gray')
 
 # Desenvolvimiento e Integracion

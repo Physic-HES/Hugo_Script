@@ -57,7 +57,6 @@ cam.set(cv2.CAP_PROP_FRAME_HEIGHT,h)
 #stereo=cv2.StereoSGBM()
 rval,frame=cam.read()
 cv2.imshow('foto',frame)
-cv2.waitKey(0)
 cv2.destroyAllWindows()
 time.sleep(0.01)
 stereo = cv2.StereoBM_create(numDisparities=96, blockSize=11)
@@ -68,16 +67,16 @@ plt.show()
 #cv2.imshow('Depth',rescale_frame(D,50))
 #cv2.waitKey(0)
 #cv2.destroyAllWindows()
-i=0
-dots=np.zeros((int(w/2*h),3))
-for x in range(int(w/2)):
-    for y in range(h):
-        dots[i,:]=[x,y,disparity[y,x]]
-        i+=1
-fig = plt.figure()
-ax = fig.add_subplot(projection='3d')
-plt.scatter(dots[:,0],dots[:,1],dots[:,2])
+#i=0
+#dots=np.zeros((int(w/2*h),3))
+#for x in range(int(w/2)):
+#    for y in range(h):
+#        dots[i,:]=[x,y,disparity[y,x]]
+#        i+=1
+#fig = plt.figure()
+#ax = fig.add_subplot(projection='3d')
+#plt.scatter(dots[:,0],dots[:,1],dots[:,2])
 #plt.imshow(D)
-plt.show()
+#plt.show()
 
 
