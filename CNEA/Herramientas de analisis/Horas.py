@@ -90,3 +90,5 @@ def balance():
     sem.tabla.to_csv('Horas.txt', sep='\t', index=False)
 
 balance()
+
+horas=horario()
