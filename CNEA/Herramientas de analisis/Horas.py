@@ -91,4 +91,3 @@ def balance():
 
 balance()
 
-horas=horario()
