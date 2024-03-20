@@ -8,26 +8,28 @@ class horario:
         self.fichados=0
         self.resto=0
         self.hoy=datetime.datetime.now()
-        self.tabla=pd.DataFrame({'Dia':[],'Entrada':[],'Salida':[],'Saldo':[],'Resto':[]})
+        self.tabla=pd.DataFrame({'Dia':[],'Mes':[],'Entrada':[],'Salida':[],'Saldo':[],'Resto':[]})
         self.dias=[]
 
     def fichado(self,d,E,S):
-        self.dias.append(d)
-        Ent=datetime.datetime.replace(self.hoy,day=d,hour=E[0],minute=E[1])
+        self.dias.append(d[0])
+        Ent=datetime.datetime.replace(self.hoy,day=d[0],month=d[1],hour=E[0],minute=E[1])
         self.fichados += 1
         if len(S)>1:
-            Sal=datetime.datetime.replace(self.hoy,day=d,hour=S[0],minute=S[1])
+            Sal=datetime.datetime.replace(self.hoy,day=d[0],month=d[1],hour=S[0],minute=S[1])
             self.acum+=Sal-Ent
             self.rest()
             if self.resto<0:
-                row=pd.DataFrame({'Dia': [f'{d:02.0f}'],
+                row=pd.DataFrame({'Dia': [f'{d[0]:02.0f}'],
+                                  'Mes': [f'{d[1]:02.0f}'],
                                    'Entrada': [f'{E[0]:02.0f}:{E[1]:02.0f}'],
                                    'Salida': [f'{S[0]:02.0f}:{S[1]:02.0f}'],
                                    'Saldo': ['-'],
                                    'Resto': [f'{np.abs(int(self.resto / 60 / 60)):02.0f}:{np.abs((self.resto / 60 / 60 - int(self.resto / 60 / 60)) * 60):02.0f}']})
                 self.tabla=pd.concat([self.tabla,row], ignore_index=True)
             else:
-                row=pd.DataFrame({'Dia': [f'{d:02.0f}'],
+                row=pd.DataFrame({'Dia': [f'{d[0]:02.0f}'],
+                                  'Mes': [f'{d[1]:02.0f}'],
                                    'Entrada': [f'{E[0]:02.0f}:{E[1]:02.0f}'],
                                    'Salida': [f'{S[0]:02.0f}:{S[1]:02.0f}'],
                                    'Saldo': ['+'],
@@ -39,7 +41,8 @@ class horario:
             salida = self.hoy - datetime.timedelta(seconds=self.resto)
             if self.resto<0:
                 print(f'----->  Deberías salir a las {salida.hour:02.0f}:{salida.minute:02.0f} hs')
-                row=pd.DataFrame({'Dia': [f'{d:02.0f}'],
+                row=pd.DataFrame({'Dia': [f'{d[0]:02.0f}'],
+                                  'Mes': [f'{d[1]:02.0f}'],
                                    'Entrada': [f'{E[0]:02.0f}:{E[1]:02.0f}'],
                                    'Salida': ['  :  '],
                                    'Saldo': ['-'],
@@ -47,7 +50,8 @@ class horario:
                 self.tabla=pd.concat([self.tabla,row], ignore_index=True)
             else:
                 print(f'----->  Deberías haber salido a las {salida.hour:02.0f}:{salida.minute:02.0f} hs')
-                row=pd.DataFrame({'Dia': [f'{d:02.0f}'],
+                row=pd.DataFrame({'Dia': [f'{d[0]:02.0f}'],
+                                  'Mes': [f'{d[1]:02.0f}'],
                                    'Entrada': [f'{E[0]:02.0f}:{E[1]:02.0f}'],
                                    'Salida': ['  :  '],
                                    'Saldo': ['+'],
@@ -80,11 +84,11 @@ def balance():
     sem=horario()
     print(' ')
     print(':::::: BALANCE HORARIO DE LA SEMANA :::::::')
-    sem.fichado(22,[8,0],[16,9])
-    #sem.fichado(16,[10,47],[18,36])
-    #sem.fichado(17,[7,1],[15,11])
-    #sem.fichado(18,[8,7],[16,40])
-    sem.fichado(23,[9,2],[0])
+    sem.fichado([29,1],[8,49],[18,8])
+    sem.fichado([30,1],[8,8],[17,49])
+    sem.fichado([31,1],[11,26],[19,14])
+    sem.fichado([1,2],[11,10],[17,33])
+    sem.fichado([2,2],[10,45],[0])
     print(' ')
     sem.planilla()
     sem.tabla.to_csv('Horas.txt', sep='\t', index=False)
