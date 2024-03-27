@@ -22,20 +22,20 @@ X,Y=np.meshgrid(np.arange(int(1.5*size)),np.arange(size))
 # Aperture parameters
 aperture_size = 15
 aperture_position = (100, 130)
-logo=cv2.imread('/home/hp1opticaiamend/Pictures/logo_0.png')
-logo=cv2.cvtColor(logo,cv2.COLOR_BGR2GRAY)
-logo=cv2.resize(logo, (u[:,:,0].shape[1],u[:,:,0].shape[0]), interpolation =cv2.INTER_AREA)
-ind_r=np.where(logo>100)[0]
-ind_c=np.where(logo>100)[1]
-cv2.imshow('logo',logo)
-cv2.destroyAllWindows()
+#logo=cv2.imread('/home/hp1opticaiamend/Pictures/logo_0.png')
+#logo=cv2.cvtColor(logo,cv2.COLOR_BGR2GRAY)
+#logo=cv2.resize(logo, (u[:,:,0].shape[1],u[:,:,0].shape[0]), interpolation =cv2.INTER_AREA)
+#ind_r=np.where(logo>100)[0]
+#ind_c=np.where(logo>100)[1]
+#cv2.imshow('logo',logo)
+#cv2.destroyAllWindows()
 
 #import prisma
-lente=cv2.imread('/home/hp1opticaiamend/Pictures/lente.png')
-lente=cv2.cvtColor(lente,cv2.COLOR_BGR2GRAY)
-lente=cv2.resize(lente, (u[:,:,0].shape[1],u[:,:,0].shape[0]), interpolation =cv2.INTER_AREA)
-ind_r2=np.where(lente>100)[0]
-ind_c2=np.where(lente>100)[1]
+#lente=cv2.imread('/home/hp1opticaiamend/Pictures/lente.png')
+#lente=cv2.cvtColor(lente,cv2.COLOR_BGR2GRAY)
+#lente=cv2.resize(lente, (u[:,:,0].shape[1],u[:,:,0].shape[0]), interpolation =cv2.INTER_AREA)
+#ind_r2=np.where(lente>100)[0]
+#ind_c2=np.where(lente>100)[1]
 
 # Construccion de prisma
 pris=np.zeros_like(c)
@@ -69,8 +69,8 @@ def update(frame):
 
     # Fuentes puntuales (Laser)
     #u[range(100-2*wavelength//2,100+3*wavelength//2,wavelength//2), 25] = amplitude * np.sin(2 * np.pi * frame / wavelength)
-    u[range(60,110,20), 6] = amplitude * np.sin(2 * np.pi * frame / ((1+np.random.random())*wavelength))
-    u[140, 6] = amplitude * np.sin(2 * np.pi * frame / ((1+np.random.random())*wavelength))
+    u[range(60,150,20), 6] = amplitude * np.sin(2 * np.pi * frame / (wavelength))
+    #u[140, 6] = amplitude * np.sin(2 * np.pi * frame / ((1+np.random.random())*wavelength))
     # caja
     #u[94,19:55]=0
     #u[106,19:55]=0
