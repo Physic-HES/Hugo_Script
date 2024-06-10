@@ -9,7 +9,8 @@ from scipy.signal import spectrogram
 # Función para generar la señal simulada del fotodetector
 def generate_signal(shift_freq, osc_freq, t):
     m=(1-0.001*np.abs(2*np.pi*osc_freq*4*np.sin(2*np.pi*osc_freq*t)))
-    signal = 1+m*np.sin(200*np.pi*shift_freq*t-4*np.pi*osc_freq*np.cos(2*np.pi*(osc_freq)*t))
+    #signal = 1+m*np.sin(200*np.pi*shift_freq*t-4*np.pi*osc_freq*np.cos(2*np.pi*(osc_freq)*t))
+    signal = 1+m*np.sin(200*np.pi*shift_freq*t-20*np.pi*np.cos(2*np.pi*(osc_freq)*t))
     return signal
 
 # Función para actualizar los gráficos
@@ -37,6 +38,7 @@ def update_plot(shift_freq, osc_freq):
     ax1.text(7-0.5,3+0.75,r'BS$_2$')
     ax1.text(-0.5,3+0.75,'M')
     ax1.text(-2.5,0.5,'Láser')
+    ax1.text(8.5,3,'FD')
     ax1.annotate(text=' ', xy=(10+0.25/2-0.5,1.25), xytext=(10+0.25/2+0.5,0.9+0.25), arrowprops=dict(arrowstyle='<->'))
     ax1.arrow(1,-0.25,0.75,0,head_width=0.15)
     ax1.text(1.25,-0.75,r'$f_0$')
@@ -64,10 +66,10 @@ def update_plot(shift_freq, osc_freq):
     ax1.plot([7, 8], [2.95, 2.95], color=(1-0.75*shift_freq/10, shift_freq/10, osc_freq/4), linewidth=2)  # Haz hacia el fotodetector
 
     ax1.set_xlim(-3, 11)
-    ax1.set_ylim(-1, 4.5)
+    ax1.set_ylim(-1.25, 4.5)
     ax1.set_aspect('equal', 'box')
     ax1.axis('off')
-    ax1.set_title('Laser Doppler Vibrometer')
+    ax1.set_title(r'$I_{FD}=I_{DC}+I_{RO}\cos\left(2\pi(f_D+f_{AOM})t+\Delta \Phi\right)$',fontsize=16)
 
     # Generar y graficar la señal del fotodetector
     t = np.linspace(0, 1, 5000)
