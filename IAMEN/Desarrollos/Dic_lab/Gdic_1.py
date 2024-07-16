@@ -3,6 +3,7 @@ import cv2
 from scipy.interpolate import  griddata
 import matplotlib.pyplot as plt
 import time
+import os
 
 
 class Mesh:
@@ -97,36 +98,66 @@ def rescale_frame(frame, percent=75):
     return cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)
 
 
-#plt.ion()
-cam=cv2.VideoCapture(0)
-cam.set(cv2.CAP_PROP_AUTO_EXPOSURE,1)
-cam.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
-cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
-cam.set(cv2.CAP_PROP_EXPOSURE,-1)
-rval,frame0=cam.read()
-frame=np.zeros(frame0.shape)
-frame0_BW=cv2.cvtColor(frame0,cv2.COLOR_BGR2GRAY)
-lowlim=100
-uplim=255
-(thresh, frame0_BW) = cv2.threshold(frame0_BW, lowlim, uplim, cv2.THRESH_BINARY)
-margen=600
-roi=[[int(margen/2),margen],[int(margen/2),frame0.shape[1]-margen],[frame0.shape[0]-int(margen/2),margen],[frame0.shape[0]-int(margen/2),frame0.shape[1]-margen]]
-step=32
-box=120
-mesh=Mesh(roi,step,box)
-print(f'Cantidad de puntos de seguimiento: {mesh.ptos.shape[0]}')
-while rval:
-    rval,frame=cam.read()
-    frame_BW = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    (thresh, frame_BW) = cv2.threshold(frame_BW, lowlim, uplim, cv2.THRESH_BINARY)
-    mesh.get_def(frame0_BW,frame_BW)
-    im_def_BW=(mesh.get_lienso(frame_BW,'XY')*5).astype('uint8')
-    im_def=cv2.cvtColor(im_def_BW,cv2.COLOR_GRAY2BGR)
-    im_def_cmap=cv2.applyColorMap(im_def, cv2.COLORMAP_TURBO)
-    frame2=cv2.addWeighted(frame,0.5,im_def_cmap,0.5,0.0)
-    for j in range(mesh.ptos.shape[0]):
-        cv2.circle(frame2,(mesh.ptos[j,1],mesh.ptos[j,0]),2,(0,0,0),-1)
-    cv2.imshow('def',rescale_frame(frame2,50))
-    frame0_BW=frame_BW
-    if cv2.waitKey(10) == 's':
-        break
+def listar_imagenes_tif(carpeta):
+    imagenes_tif = []
+    for archivo in os.listdir(carpeta):
+        if archivo.endswith('.tif'):
+            imagenes_tif.append(archivo)
+    return imagenes_tif
+
+
+class medi:
+    def __init__(self,corners,step,box):
+        self.ROI=[[corners[0][0],corners[0][1]],[corners[0][0],corners[1][1]],[corners[1][0],corners[0][1]],[corners[1][0],corners[1][1]]]
+        self.step=step
+        self.box=box
+        self.mesh=Mesh(self.ROI,self.step,self.box)
+
+    def cam(self,num,threshold):
+        cam=cv2.VideoCapture(num)
+        cam.set(cv2.CAP_PROP_AUTO_EXPOSURE,1)
+        cam.set(cv2.CAP_PROP_FRAME_WIDTH, 2560)
+        cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 960)
+        cam.set(cv2.CAP_PROP_EXPOSURE,-1)
+        rval,frame0=cam.read()
+        frame=np.zeros(frame0.shape)
+        frame0_BW=cv2.cvtColor(frame0,cv2.COLOR_BGR2GRAY)
+        lowlim=threshold[0]#100
+        uplim=threshold[1]#255
+        (thresh, frame0_BW) = cv2.threshold(frame0_BW, lowlim, uplim, cv2.THRESH_BINARY)
+        print(f'Cantidad de puntos de seguimiento: {self.mesh.ptos.shape[0]}')
+        while rval:
+            rval,frame=cam.read()
+            frame_BW = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            (thresh, frame_BW) = cv2.threshold(frame_BW, lowlim, uplim, cv2.THRESH_BINARY)
+            self.mesh.get_def(frame0_BW,frame_BW)
+            im_def_BW=(self.mesh.get_lienso(frame_BW,'XY')*5).astype('uint8')
+            im_def=cv2.cvtColor(im_def_BW,cv2.COLOR_GRAY2BGR)
+            im_def_cmap=cv2.applyColorMap(im_def, cv2.COLORMAP_TURBO)
+            frame2=cv2.addWeighted(frame,0.5,im_def_cmap,0.5,0.0)
+            for j in range(self.mesh.ptos.shape[0]):
+                cv2.circle(frame2,(self.mesh.ptos[j,1],self.mesh.ptos[j,0]),2,(0,0,0),-1)
+            cv2.imshow('def',rescale_frame(frame2,50))
+            frame0_BW=frame_BW
+            if cv2.waitKey(10) == 's':
+                break
+
+    def imag(self,path):
+        imag_tif=listar_imagenes_tif(path)
+        img0 = cv2.imread(path+imag_tif[0], cv2.IMREAD_UNCHANGED)
+        for k in range(len(imag_tif)-1):
+            img1 = cv2.imread(path+imag_tif[k+1], cv2.IMREAD_UNCHANGED)
+            self.mesh.get_def(img0,img1)
+            im_def_=(self.mesh.get_lienso(img1,'Y')*5).astype('uint8')
+            im_def=cv2.cvtColor(im_def_,cv2.COLOR_GRAY2BGR)
+            im_def_cmap=cv2.applyColorMap(im_def, cv2.COLORMAP_TURBO)
+            frame=cv2.addWeighted(cv2.cvtColor(img1,cv2.COLOR_GRAY2BGR),0.5,im_def_cmap,0.5,0.0)
+            for j in range(self.mesh.ptos.shape[0]):
+                cv2.circle(frame,(self.mesh.ptos[j,1],self.mesh.ptos[j,0]),2,(0,0,0),-1)
+            cv2.imshow(imag_tif[0],rescale_frame(frame,50))
+            img0=img1
+            cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+medicion=medi([[180,590],[900,750]],12,80)
+medicion.imag('C:\\Users\\user\\Downloads\\al-tensile-2d\\al-tensile-2d\\')
