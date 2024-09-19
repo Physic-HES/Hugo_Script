@@ -23,6 +23,7 @@ def graf(tit,ens):
 def fourier(ens,lineas=1024,overl=50):
     fs = 1/(ens[1,0]-ens[0,0])
     B=2*lineas
+    ov=int(overl/100*B)
     Sc2=1/np.mean(S.get_window('hann',lineas))
     for c in range(1,5):
         if c == 1:
